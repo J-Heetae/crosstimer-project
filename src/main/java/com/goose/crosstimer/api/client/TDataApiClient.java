@@ -23,7 +23,7 @@ public class TDataApiClient {
     public List<MapResponseDto> getMapInfo(TDataApiRequestDto requestDto) {
         return webClient.get()
                 .uri(uriBuilder -> applyCommonParams(uriBuilder
-                                .scheme("http")
+                                .scheme("https")
                                 .host("t-data.seoul.go.kr")
                                 .path("/apig/apiman-gateway/tapi/v2xCrossroadMapInformation/1.0"),
                         requestDto))
