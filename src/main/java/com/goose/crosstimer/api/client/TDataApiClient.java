@@ -33,7 +33,7 @@ public class TDataApiClient {
                 .block();
     }
 
-    public SignalResponseDto getSignalInfo(TDataApiRequestDto requestDto) {
+    public List<SignalResponseDto> getSignalInfo(TDataApiRequestDto requestDto) {
 
         return webClient.get()
                 .uri(uriBuilder -> applyCommonParams(uriBuilder
@@ -42,7 +42,8 @@ public class TDataApiClient {
                                 .path("/apig/apiman-gateway/tapi/v2xSignalPhaseTimingFusionInformation/1.0"),
                         requestDto))
                 .retrieve()
-                .bodyToMono(SignalResponseDto.class)
+                .bodyToFlux(SignalResponseDto.class)
+                .collectList()
                 .block();
     }
 
