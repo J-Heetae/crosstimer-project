@@ -23,6 +23,10 @@ public class TDataApiRequestDto {
         this.itstId = itstId;
     }
 
+    public static TDataApiRequestDto from() {
+        return new TDataApiRequestDto(1, 1000, null);
+    }
+
     // 일반 페이지네이션 요청
     public static TDataApiRequestDto fromPagination(int pageNo, int numOfRows) {
         return new TDataApiRequestDto(pageNo, numOfRows, null);
