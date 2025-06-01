@@ -10,7 +10,7 @@ public record MapResponseDto(
         Double mapCtptIntLot,     // 중심점 경도
         Double laneWidth,         // 차로폭
         String limitSpedTypeNm,   // 제한속도유형명
-        Integer limitSped,        // 제한속도
+        String limitSped,        // 제한속도
         String rgtrId,            // 등록자 ID
         OffsetDateTime regDt      // 등록일시
 ) {
