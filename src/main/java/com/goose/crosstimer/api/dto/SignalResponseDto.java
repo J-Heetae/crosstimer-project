@@ -4,15 +4,15 @@ import java.time.OffsetDateTime;
 
 public record SignalResponseDto(
         String dataId,          // 데이터 ID
-        String itstId,          // 교차로 ID
+        Integer itstId,          // 교차로 ID
         String eqmnId,          // 장비 ID
 
-        String trsmYear,        // 패킷전송년도
-        String trsmMt,          // 패킷전송월
+        Integer trsmYear,        // 패킷전송년도
+        Integer trsmMt,          // 패킷전송월
         Integer trsmDy,         // 패킷전송일
         Integer trsmHr,         // 패킷전송시간
-        String trsmTm,          // 패킷전송시:분:초
-        String trsmMs,          // 패킷전송밀리초
+        Integer trsmTm,          // 패킷전송시:분:초
+        Integer trsmMs,          // 패킷전송밀리초
         Long trsmUtcTime,       // 전송UTC시간
 
         Integer msgCreatMin,    // 메시지 생성 시간
