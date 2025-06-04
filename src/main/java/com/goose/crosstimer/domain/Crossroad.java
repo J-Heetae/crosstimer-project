@@ -19,21 +19,21 @@ import static lombok.AccessLevel.PROTECTED;
 public class Crossroad {
     @Id
     private Integer itstId;
-    private String itstKrNm;
-    private Double mapCtptIntLat;
-    private Double mapCtptIntLot;
+    private String name;
+    private Double lat;
+    private Double lng;
     @OneToOne(mappedBy = "crossroad")
     private SignalInfo signalInfo;
 
-    private Crossroad(Integer itsdId, String itstKrNm, Double mapCtptIntLat, Double mapCtptIntLot) {
-        this.itstId = itsdId;
-        this.itstKrNm = itstKrNm;
-        this.mapCtptIntLat = mapCtptIntLat;
-        this.mapCtptIntLot = mapCtptIntLot;
+    private Crossroad(Integer itstId, String name, Double lat, Double lng) {
+        this.itstId = itstId;
+        this.name = name;
+        this.lat = lat;
+        this.lng = lng;
     }
 
-    public static Crossroad create(Integer itstId, String itstKrNm, Double mapCtptIntLat, Double mapCtptIntLot) {
-        return new Crossroad(itstId, itstKrNm, mapCtptIntLat, mapCtptIntLot);
+    public static Crossroad create(Integer itstId, String name, Double lat, Double lng) {
+        return new Crossroad(itstId, name, lat, lng);
     }
 
 }
