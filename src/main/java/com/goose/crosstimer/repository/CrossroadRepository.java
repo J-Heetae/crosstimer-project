@@ -7,7 +7,7 @@ import java.util.List;
 
 public interface CrossroadRepository extends JpaRepository<Crossroad, Integer> {
 
-    List<Crossroad> findByMapCtptIntLatBetweenAndMapCtptIntLotBetween(
+    List<Crossroad> findByLatBetweenAndLngBetween(
             Double swLat, Double neLat,
             Double swLot, Double neLot
     );

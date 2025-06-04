@@ -14,7 +14,7 @@ public class CrossroadService {
     private final CrossroadRepository crossroadRepository;
 
     public List<Crossroad> getCrossroadsInRange(CrossroadRangeRequestDto requestDto) {
-        return crossroadRepository.findByMapCtptIntLatBetweenAndMapCtptIntLotBetween(
+        return crossroadRepository.findByLatBetweenAndLngBetween(
                 requestDto.swLat(), requestDto.neLat(),
                 requestDto.swLot(), requestDto.neLot()
         );
