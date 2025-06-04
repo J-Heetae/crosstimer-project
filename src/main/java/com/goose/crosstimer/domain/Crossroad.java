@@ -6,6 +6,7 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import static lombok.AccessLevel.PROTECTED;
 
@@ -13,6 +14,7 @@ import static lombok.AccessLevel.PROTECTED;
 @Getter
 @Entity
 @Table(name = "crossroad")
+@ToString(exclude = "signalInfo")
 @NoArgsConstructor(access = PROTECTED)
 public class Crossroad {
     @Id
@@ -30,8 +32,8 @@ public class Crossroad {
         this.mapCtptIntLot = mapCtptIntLot;
     }
 
-    public static Crossroad create(Integer itsdId, String itstKrNm, Double mapCtptIntLat, Double mapCtptIntLot) {
-        return new Crossroad(itsdId, itstKrNm, mapCtptIntLat, mapCtptIntLot);
+    public static Crossroad create(Integer itstId, String itstKrNm, Double mapCtptIntLat, Double mapCtptIntLot) {
+        return new Crossroad(itstId, itstKrNm, mapCtptIntLat, mapCtptIntLot);
     }
 
 }
