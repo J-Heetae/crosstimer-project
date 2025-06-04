@@ -17,7 +17,7 @@ public class WebClientConfig {
     @Bean
     public ObjectMapper objectMapper() {
         ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(new ParameterNamesModule()); // 🔑 record 생성자 파라미터명 유지
+        mapper.registerModule(new ParameterNamesModule());
         mapper.registerModule(new JavaTimeModule());
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         return mapper;
