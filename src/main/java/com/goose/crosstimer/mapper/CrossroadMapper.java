@@ -5,6 +5,11 @@ import com.goose.crosstimer.domain.Crossroad;
 
 public class CrossroadMapper {
     public static Crossroad fromDto(CrossroadResponseDto dto) {
-        return Crossroad.create(dto.itstId(), dto.itstNm(), dto.mapCtptIntLat(), dto.mapCtptIntLot());
+        return Crossroad.builder()
+                .itstId(dto.itstId())
+                .name(dto.itstNm())
+                .lat(dto.mapCtptIntLat())
+                .lng(dto.mapCtptIntLot())
+                .build();
     }
 }

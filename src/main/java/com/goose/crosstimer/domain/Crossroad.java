@@ -4,10 +4,9 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 
+import static lombok.AccessLevel.PRIVATE;
 import static lombok.AccessLevel.PROTECTED;
 
 
@@ -25,15 +24,12 @@ public class Crossroad {
     @OneToOne(mappedBy = "crossroad")
     private SignalInfo signalInfo;
 
+    @Builder
     private Crossroad(Integer itstId, String name, Double lat, Double lng) {
         this.itstId = itstId;
         this.name = name;
         this.lat = lat;
         this.lng = lng;
-    }
-
-    public static Crossroad create(Integer itstId, String name, Double lat, Double lng) {
-        return new Crossroad(itstId, name, lat, lng);
     }
 
 }

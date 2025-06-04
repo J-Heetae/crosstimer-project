@@ -7,17 +7,25 @@ import com.goose.crosstimer.domain.SignalInfo;
 
 public class SignalInfoMapper {
     public static SignalInfo fromDto(SignalResponseDto dto) {
-        return SignalInfo.create(
-                dto.itstId(),
-                dto.trsmUtcTime(),
-                dto.ntPdsgRmdrCs(), dto.ntPdsgStatNm(),
-                dto.etPdsgRmdrCs(), dto.etPdsgStatNm(),
-                dto.stPdsgRmdrCs(), dto.stPdsgStatNm(),
-                dto.wtPdsgRmdrCs(), dto.wtPdsgStatNm(),
-                dto.nePdsgRmdrCs(), dto.nePdsgStatNm(),
-                dto.sePdsgRmdrCs(), dto.sePdsgStatNm(),
-                dto.swPdsgRmdrCs(), dto.swPdsgStatNm(),
-                dto.nwPdsgRmdrCs(), dto.nwPdsgStatNm()
-        );
+        return SignalInfo.builder()
+                .itstId(dto.itstId())
+                .trsmUtcTime(dto.trsmUtcTime())
+                .ntPdsgRmdrCs(dto.ntPdsgRmdrCs())
+                .ntPdsgStatNm(dto.ntPdsgStatNm())
+                .etPdsgRmdrCs(dto.etPdsgRmdrCs())
+                .etPdsgStatNm(dto.etPdsgStatNm())
+                .stPdsgRmdrCs(dto.stPdsgRmdrCs())
+                .stPdsgStatNm(dto.stPdsgStatNm())
+                .wtPdsgRmdrCs(dto.wtPdsgRmdrCs())
+                .wtPdsgStatNm(dto.wtPdsgStatNm())
+                .nePdsgRmdrCs(dto.nePdsgRmdrCs())
+                .nePdsgStatNm(dto.nePdsgStatNm())
+                .sePdsgRmdrCs(dto.sePdsgRmdrCs())
+                .sePdsgStatNm(dto.sePdsgStatNm())
+                .swPdsgRmdrCs(dto.swPdsgRmdrCs())
+                .swPdsgStatNm(dto.swPdsgStatNm())
+                .nwPdsgRmdrCs(dto.nwPdsgRmdrCs())
+                .nwPdsgStatNm(dto.nwPdsgStatNm())
+                .build();
     }
 }

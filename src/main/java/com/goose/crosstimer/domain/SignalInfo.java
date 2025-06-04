@@ -1,6 +1,7 @@
 package com.goose.crosstimer.domain;
 
 import jakarta.persistence.*;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
@@ -12,6 +13,7 @@ import static lombok.AccessLevel.PROTECTED;
 @Table(name = "signal_info")
 @NoArgsConstructor(access = PROTECTED)
 @ToString(exclude = "crossroad")
+@Builder
 public class SignalInfo {
     @Id
     private Integer itstId;
@@ -44,6 +46,7 @@ public class SignalInfo {
     private Integer nwPdsgRmdrCs;
     private String nwPdsgStatNm;
 
+    @Builder
     private SignalInfo(
             Integer itstId,
             Long trsmUtcTime,
@@ -82,31 +85,5 @@ public class SignalInfo {
 
         this.nwPdsgRmdrCs = nwPdsgRmdrCs;
         this.nwPdsgStatNm = nwPdsgStatNm;
-    }
-
-    public static SignalInfo create(
-            Integer itstId,
-            Long trsmUtcTime,
-            Integer ntPdsgRmdrCs, String ntPdsgStatNm,
-            Integer etPdsgRmdrCs, String etPdsgStatNm,
-            Integer stPdsgRmdrCs, String stPdsgStatNm,
-            Integer wtPdsgRmdrCs, String wtPdsgStatNm,
-            Integer nePdsgRmdrCs, String nePdsgStatNm,
-            Integer sePdsgRmdrCs, String sePdsgStatNm,
-            Integer swPdsgRmdrCs, String swPdsgStatNm,
-            Integer nwPdsgRmdrCs, String nwPdsgStatNm
-    ) {
-        return new SignalInfo(
-                itstId,
-                trsmUtcTime,
-                ntPdsgRmdrCs, ntPdsgStatNm,
-                etPdsgRmdrCs, etPdsgStatNm,
-                stPdsgRmdrCs, stPdsgStatNm,
-                wtPdsgRmdrCs, wtPdsgStatNm,
-                nePdsgRmdrCs, nePdsgStatNm,
-                sePdsgRmdrCs, sePdsgStatNm,
-                swPdsgRmdrCs, swPdsgStatNm,
-                nwPdsgRmdrCs, nwPdsgStatNm
-        );
     }
 }
