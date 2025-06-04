@@ -13,7 +13,6 @@ import static lombok.AccessLevel.PROTECTED;
 @Table(name = "signal_info")
 @NoArgsConstructor(access = PROTECTED)
 @ToString(exclude = "crossroad")
-@Builder
 public class SignalInfo {
     @Id
     private Integer itstId;
