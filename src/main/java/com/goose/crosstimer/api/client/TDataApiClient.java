@@ -3,7 +3,6 @@ package com.goose.crosstimer.api.client;
 import com.goose.crosstimer.api.dto.TDataApiRequestDto;
 import com.goose.crosstimer.api.dto.CrossroadResponseDto;
 import com.goose.crosstimer.api.dto.SignalResponseDto;
-import io.netty.util.Signal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -21,7 +20,7 @@ import java.util.Optional;
 public class TDataApiClient {
     private final WebClient webClient;
 
-    private static final int API_WAITING_TIME = 3;
+    private static final int API_WAITING_TIME = 10;
 
     @Value("${tdata.api-key}")
     private String apiKey;
