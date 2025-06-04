@@ -20,7 +20,8 @@ import java.util.Optional;
 public class TDataApiClient {
     private final WebClient webClient;
 
-    private static final int API_WAITING_TIME = 10;
+    private static final String BASE_URL = "https://t-data.seoul.go.kr";
+    private static final int DEFAULT_TIMEOUT_SECONDS = 10;
 
     @Value("${tdata.api-key}")
     private String apiKey;
@@ -28,8 +29,8 @@ public class TDataApiClient {
     public List<CrossroadResponseDto> getCrossroadInfo(TDataApiRequestDto requestDto) {
         return webClient.get()
                 .uri(uriBuilder -> applyCommonParams(uriBuilder
-                                .scheme("https")
-                                .host("t-data.seoul.go.kr")
+                                .scheme(URI.create(BASE_URL).getScheme())
+                                .host(URI.create(BASE_URL).getHost())
                                 .path("/apig/apiman-gateway/tapi/v2xCrossroadMapInformation/1.0"),
                         requestDto))
                 .retrieve()
@@ -38,15 +39,15 @@ public class TDataApiClient {
                 .doOnNext(dto -> System.out.println("받은 응답: " + dto))
                 .doOnError(error -> System.out.println("에러 발생: " + error.getMessage()))
                 .collectList()
-                .block();
+                .block(Duration.ofSeconds(DEFAULT_TIMEOUT_SECONDS));
     }
 
     public List<SignalResponseDto> getSignalInfo(TDataApiRequestDto requestDto) {
         try {
             return webClient.get()
                     .uri(uriBuilder -> applyCommonParams(uriBuilder
-                                    .scheme("https")
-                                    .host("t-data.seoul.go.kr")
+                                    .scheme(URI.create(BASE_URL).getScheme())
+                                    .host(URI.create(BASE_URL).getHost())
                                     .path("/apig/apiman-gateway/tapi/v2xSignalPhaseTimingFusionInformation/1.0"),
                             requestDto))
                     .retrieve()
@@ -55,7 +56,7 @@ public class TDataApiClient {
                     .doOnNext(dto -> System.out.println("받은 응답: " + dto))
                     .doOnError(error -> System.out.println("에러 발생: " + error.getMessage()))
                     .collectList()
-                    .block(Duration.ofSeconds(API_WAITING_TIME));
+                    .block(Duration.ofSeconds(DEFAULT_TIMEOUT_SECONDS));
         } catch (Exception e) {
             System.out.println("[" + requestDto.getItstId() + "] API 호출 실패: " + e.getMessage());
             return List.of();
@@ -64,8 +65,9 @@ public class TDataApiClient {
 
     public Mono<Optional<SignalResponseDto>> getFirstSignalByItstIdAsync(Integer itstId) {
         return webClient.get()
-                .uri(uriBuilder -> uriBuilder.scheme("https")
-                        .host("t-data.seoul.go.kr")
+                .uri(uriBuilder -> uriBuilder
+                        .scheme(URI.create(BASE_URL).getScheme())
+                        .host(URI.create(BASE_URL).getHost())
                         .path("/apig/apiman-gateway/tapi/v2xSignalPhaseTimingFusionInformation/1.0")
                         .queryParam("apikey", apiKey)
                         .queryParam("itstId", itstId)
@@ -73,7 +75,7 @@ public class TDataApiClient {
                 .retrieve()
                 .bodyToFlux(SignalResponseDto.class)
                 .next() // 가장 첫 번째 응답 하나만
-                .timeout(Duration.ofSeconds(2)) // 응답 제한 시간
+                .timeout(Duration.ofSeconds(DEFAULT_TIMEOUT_SECONDS)) // 응답 제한 시간
                 .map(Optional::of)
                 .onErrorResume(e -> Mono.just(Optional.empty())); // 실패 시 빈 값 반환
     }
