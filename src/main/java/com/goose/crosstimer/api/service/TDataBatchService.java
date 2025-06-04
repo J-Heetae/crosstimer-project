@@ -13,13 +13,9 @@ import com.goose.crosstimer.repository.SignalInfoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -30,49 +26,41 @@ public class TDataBatchService {
 
     @Scheduled(fixedRate = 300000L)
     public void fetchCrossroadData() {
-//        List<Crossroad> crossroadList = new ArrayList<>();
-//        int pageNo = 1;
-//        final int numOfRows = 1000;
-//
-//        while (true) {
-//            List<CrossroadResponseDto> crossroadInfoList = client.getCrossroadInfo(
-//                    TDataApiRequestDto.fromPagination(pageNo, numOfRows)
-//            );
-//
-//            if (crossroadInfoList.isEmpty()) {
-//                break;
-//            }
-//
-//            List<Crossroad> mappedList = crossroadInfoList.stream()
-//                    .map(CrossroadMapper::fromDto)
-//                    .toList();
-//
-//            crossroadList.addAll(mappedList);
-//
-//            pageNo++;
-//        }
-//
-//        List<Integer> itstIdList = crossroadList.stream().map(Crossroad::getItstId).toList();
+        int pageNo = 1;
+        final int numOfRows = 1000;
+        List<CrossroadResponseDto> crossroadInfoList = new ArrayList<>();
 
-        List<Integer> itstIdList = new ArrayList<>();
-        for(int i=1; i<=2710; i++) {
-            itstIdList.add(i);
+        while (true) {
+            List<CrossroadResponseDto> temp = client.getCrossroadInfo(
+                    TDataApiRequestDto.fromPagination(pageNo, numOfRows)
+            );
+
+            if (temp.isEmpty()) {
+                break;
+            }
+
+            crossroadInfoList.addAll(temp);
+
+            pageNo++;
         }
-        List<Mono<Optional<SignalResponseDto>>> monoList = itstIdList.stream().map(client::getFirstSignalByItstIdAsync).toList();
+        List<Crossroad> crossroadList = crossroadInfoList.stream()
+                .map(CrossroadMapper::fromDto)
+                .toList();
 
-        List<SignalResponseDto> signalList = Flux.fromIterable(monoList)
-                .flatMap(mono -> mono, 1)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .collectList()
-                .block();
+        crossroadRepository.saveAll(crossroadList);
+    }
 
-        List<SignalInfo> signalInfoList = Objects.requireNonNull(signalList).stream()
+    @Scheduled(fixedRate = 300000L)
+    public void fetchSignalInfo() {
+        final int numOfRows = 1000;
+        List<SignalResponseDto> signalResponseDtoList = new ArrayList<>();
+        for (int pageNo = 1; pageNo <= 10; pageNo++) {
+            signalResponseDtoList.addAll(client.getSignalInfo(TDataApiRequestDto.fromPagination(pageNo, numOfRows)));
+        }
+        List<SignalInfo> signalInfoList = signalResponseDtoList.stream()
                 .map(SignalInfoMapper::fromDto)
                 .toList();
 
         signalInfoRepository.saveAll(signalInfoList);
-//        crossroadRepository.saveAll(crossroadList);
     }
-
 }
