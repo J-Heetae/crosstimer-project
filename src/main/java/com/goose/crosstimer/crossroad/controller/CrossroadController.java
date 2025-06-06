@@ -1,8 +1,8 @@
-package com.goose.crosstimer.controller;
+package com.goose.crosstimer.crossroad.controller;
 
-import com.goose.crosstimer.domain.Crossroad;
-import com.goose.crosstimer.domain.CrossroadRangeRequestDto;
-import com.goose.crosstimer.service.CrossroadService;
+import com.goose.crosstimer.crossroad.domain.Crossroad;
+import com.goose.crosstimer.crossroad.dto.CrossroadRangeRequest;
+import com.goose.crosstimer.crossroad.service.CrossroadService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

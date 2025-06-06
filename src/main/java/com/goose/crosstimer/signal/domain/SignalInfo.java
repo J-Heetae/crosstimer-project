@@ -1,5 +1,6 @@
-package com.goose.crosstimer.domain;
+package com.goose.crosstimer.signal.domain;
 
+import com.goose.crosstimer.crossroad.domain.Crossroad;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;

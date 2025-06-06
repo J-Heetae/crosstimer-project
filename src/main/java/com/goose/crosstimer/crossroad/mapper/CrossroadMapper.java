@@ -1,4 +1,4 @@
-package com.goose.crosstimer.mapper;
+package com.goose.crosstimer.crossroad.mapper;
 
 import com.goose.crosstimer.api.dto.TDataCrossroadResponse;
 import com.goose.crosstimer.crossroad.domain.Crossroad;

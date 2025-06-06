@@ -1,6 +1,6 @@
-package com.goose.crosstimer.repository;
+package com.goose.crosstimer.crossroad.repository;
 
-import com.goose.crosstimer.domain.Crossroad;
+import com.goose.crosstimer.crossroad.domain.Crossroad;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

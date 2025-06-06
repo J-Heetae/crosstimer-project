@@ -1,12 +1,10 @@
-package com.goose.crosstimer.mapper;
+package com.goose.crosstimer.signal.mapper;
 
-import com.goose.crosstimer.api.dto.CrossroadResponseDto;
-import com.goose.crosstimer.api.dto.SignalResponseDto;
-import com.goose.crosstimer.domain.Crossroad;
-import com.goose.crosstimer.domain.SignalInfo;
+import com.goose.crosstimer.api.dto.TDataSignalResponse;
+import com.goose.crosstimer.signal.domain.SignalInfo;
 
 public class SignalInfoMapper {
-    public static SignalInfo fromDto(SignalResponseDto dto) {
+    public static SignalInfo fromDto(TDataSignalResponse dto) {
         return SignalInfo.builder()
                 .itstId(dto.itstId())
                 .trsmUtcTime(dto.trsmUtcTime())

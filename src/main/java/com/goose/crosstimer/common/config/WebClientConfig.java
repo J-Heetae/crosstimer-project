@@ -1,4 +1,4 @@
-package com.goose.crosstimer.api.config;
+package com.goose.crosstimer.common.config;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
