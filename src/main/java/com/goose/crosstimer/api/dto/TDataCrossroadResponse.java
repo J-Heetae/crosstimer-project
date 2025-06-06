@@ -2,7 +2,7 @@ package com.goose.crosstimer.api.dto;
 
 import java.time.OffsetDateTime;
 
-public record CrossroadResponseDto(
+public record TDataCrossroadResponse(
         Integer itstId,           // 교차로 ID
         String itstNm,            // 교차로 한글명
         String itstEngNm,         // 교차로 영문명

@@ -16,7 +16,7 @@ public class CrossroadController {
     private final CrossroadService crossroadService;
 
     @PostMapping
-    public ResponseEntity<List<Crossroad>> getCrossroadInRange(@RequestBody CrossroadRangeRequestDto requestDto) {
-        return ResponseEntity.ok(crossroadService.getCrossroadsInRange(requestDto));
+    public ResponseEntity<List<Crossroad>> getCrossroadInRange(@RequestBody CrossroadRangeRequest request) {
+        return ResponseEntity.ok(crossroadService.getCrossroadsInRange(request));
     }
 }

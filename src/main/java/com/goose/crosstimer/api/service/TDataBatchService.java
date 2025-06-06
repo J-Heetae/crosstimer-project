@@ -1,15 +1,15 @@
 package com.goose.crosstimer.api.service;
 
 import com.goose.crosstimer.api.client.TDataApiClient;
-import com.goose.crosstimer.api.dto.CrossroadResponseDto;
-import com.goose.crosstimer.api.dto.SignalResponseDto;
-import com.goose.crosstimer.api.dto.TDataApiRequestDto;
-import com.goose.crosstimer.domain.Crossroad;
-import com.goose.crosstimer.domain.SignalInfo;
-import com.goose.crosstimer.mapper.CrossroadMapper;
-import com.goose.crosstimer.mapper.SignalInfoMapper;
-import com.goose.crosstimer.repository.CrossroadRepository;
-import com.goose.crosstimer.repository.SignalInfoRepository;
+import com.goose.crosstimer.api.dto.TDataCrossroadResponse;
+import com.goose.crosstimer.api.dto.TDataSignalResponse;
+import com.goose.crosstimer.api.dto.TDataRequest;
+import com.goose.crosstimer.crossroad.domain.Crossroad;
+import com.goose.crosstimer.signal.domain.SignalInfo;
+import com.goose.crosstimer.crossroad.mapper.CrossroadMapper;
+import com.goose.crosstimer.signal.mapper.SignalInfoMapper;
+import com.goose.crosstimer.crossroad.repository.CrossroadRepository;
+import com.goose.crosstimer.signal.repository.SignalInfoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -28,11 +28,11 @@ public class TDataBatchService {
     public void fetchCrossroadData() {
         int pageNo = 1;
         final int numOfRows = 1000;
-        List<CrossroadResponseDto> crossroadInfoList = new ArrayList<>();
+        List<TDataCrossroadResponse> crossroadInfoList = new ArrayList<>();
 
         while (true) {
-            List<CrossroadResponseDto> temp = client.getCrossroadInfo(
-                    TDataApiRequestDto.fromPagination(pageNo, numOfRows)
+            List<TDataCrossroadResponse> temp = client.getCrossroadInfo(
+                    TDataRequest.fromPagination(pageNo, numOfRows)
             );
 
             if (temp.isEmpty()) {
@@ -53,9 +53,9 @@ public class TDataBatchService {
     @Scheduled(fixedRate = 300000L)
     public void fetchSignalInfo() {
         final int numOfRows = 1000;
-        List<SignalResponseDto> signalResponseDtoList = new ArrayList<>();
+        List<TDataSignalResponse> signalResponseDtoList = new ArrayList<>();
         for (int pageNo = 1; pageNo <= 10; pageNo++) {
-            signalResponseDtoList.addAll(client.getSignalInfo(TDataApiRequestDto.fromPagination(pageNo, numOfRows)));
+            signalResponseDtoList.addAll(client.getSignalInfo(TDataRequest.fromPagination(pageNo, numOfRows)));
         }
         List<SignalInfo> signalInfoList = signalResponseDtoList.stream()
                 .map(SignalInfoMapper::fromDto)

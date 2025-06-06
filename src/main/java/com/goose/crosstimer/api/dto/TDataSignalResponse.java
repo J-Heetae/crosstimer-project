@@ -2,7 +2,7 @@ package com.goose.crosstimer.api.dto;
 
 import java.time.OffsetDateTime;
 
-public record SignalResponseDto(
+public record TDataSignalResponse(
         String dataId,          // 데이터 ID
         Integer itstId,          // 교차로 ID
         String eqmnId,          // 장비 ID

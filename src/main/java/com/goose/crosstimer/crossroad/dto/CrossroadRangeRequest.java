@@ -1,7 +1,7 @@
-package com.goose.crosstimer.domain;
+package com.goose.crosstimer.crossroad.dto;
 
 
-public record CrossroadRangeRequestDto(
+public record CrossroadRangeRequest(
         Double swLat,
         Double swLot,
         Double neLat,
