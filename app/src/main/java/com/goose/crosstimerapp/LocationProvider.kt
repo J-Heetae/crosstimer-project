@@ -26,13 +26,24 @@ class LocationProvider(val context: Context) {
             return
         }
 
-        if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-            Log.w(TAG, "GPS_PROVIDER 비활성화됨")
+        val isGpsProviderEnable = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+        val isNetworkProviderEnable = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+
+        if (!isGpsProviderEnable && !isNetworkProviderEnable) {
+            Log.w(TAG, "GPS, Network 모두 비활성화됨")
             onLocationReceived(null)
             return
         }
 
-        locationManager.requestSingleUpdate(LocationManager.GPS_PROVIDER, object : LocationListener {
+        //현재는 GPS 우선, GPS 비활성화인 경우 NETWORK로 제공
+        //추후에 FusedLocationProviderClient로 리팩토링
+        val provider: String? = if (isGpsProviderEnable) {
+            LocationManager.GPS_PROVIDER
+        } else {
+            LocationManager.NETWORK_PROVIDER
+        }
+
+        locationManager.requestSingleUpdate(provider.toString(), object : LocationListener {
             override fun onLocationChanged(loc: Location) {
                 Log.d(TAG, "위치 수신 완료: $loc")
                 location = loc
