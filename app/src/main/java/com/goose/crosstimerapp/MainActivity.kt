@@ -4,8 +4,6 @@ import android.Manifest
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.location.Address
-import android.location.Geocoder
 import android.location.LocationManager
 import android.os.Bundle
 import android.provider.Settings
@@ -21,12 +19,18 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.goose.crosstimerapp.databinding.ActivityMainBinding
-import java.io.IOException
-import java.util.Locale
+import com.goose.crosstimerapp.retrofit.CrossroadRequest
+import com.goose.crosstimerapp.retrofit.CrossroadResponse
+import com.goose.crosstimerapp.retrofit.CrossroadService
+import com.goose.crosstimerapp.retrofit.RetrofitConnection
+import retrofit2.Call
+import retrofit2.Response
+import kotlin.math.cos
 
 class MainActivity : AppCompatActivity() {
     lateinit var binding: ActivityMainBinding
     lateinit var locationProvider: LocationProvider
+    lateinit var retrofitConnection: RetrofitConnection
 
     private val TAG = MainActivity::class.java.simpleName
 
@@ -57,7 +61,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         checkAllPermissions()
-//        updateUI()
     }
 
     private fun updateUI() {
@@ -66,9 +69,11 @@ class MainActivity : AppCompatActivity() {
         // 현재 위치 요청
         locationProvider.getCurrentLocation { location ->
             if (location != null) {
-                val latitude = location.latitude
-                val longitude = location.longitude
-                Log.d(TAG, "현재 위치: $latitude, $longitude")
+                val lat = location.latitude
+                val lot = location.longitude
+                Log.d(TAG, "현재 위치: $lat, $lot")
+
+                getCrossroadDataInRange(lat, lot)
 
                 // 위치 정보를 UI에 표시하거나 서버로 전송하는 등 원하는 작업 수행
             } else {
@@ -78,30 +83,59 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun getCurrentAddress (latitude: Double, longitude: Double) : Address? {
-        val geocoder = Geocoder(this, Locale.getDefault())
+    data class LatLot(val lat: Double, val lot: Double)
 
-        val addresses : List<Address>
+    private fun getBoundingBoxAround(lat: Double, lot: Double): Pair<LatLot, LatLot> {
+        val radius: Double = 500.0
 
-        addresses = try {
-            Log.i(TAG, "getCurrentAddress: 지오코더 서비스 이용 가능")
-            geocoder.getFromLocation(latitude, longitude, 7)
-        } catch (_ : IOException) {
-            Log.w(TAG, "getCurrentAddress:지오코더 서비스 이용 불가")
-            Toast.makeText(this, "지오코더 서비스 이용 불가", Toast.LENGTH_LONG).show()
-            return null
-        } catch (_ : IllegalArgumentException) {
-            Log.w(TAG, "getCurrentAddress:잘못된 위도, 경도 입니다.")
-            Toast.makeText(this, "잘못된 위도, 경도 입니다.", Toast.LENGTH_LONG).show()
-            return null
-        }!!
+        val latOffset = radius / 111000.0
+        val lotOffset = radius / (111000.0 * cos(Math.toRadians(lat)))
 
-        if(addresses.isEmpty()) {
-            Toast.makeText(this, "주소를 찾을 수 없습니다.", Toast.LENGTH_LONG).show()
-            return null
-        }
+        val southWest = LatLot(lat - latOffset, lot - lotOffset) // 왼쪽 아래
+        val northEast = LatLot(lat + latOffset, lot + lotOffset) // 오른쪽 위
 
-        return addresses[0]
+        return Pair(southWest, northEast)
+    }
+
+    private fun getCrossroadDataInRange(lat: Double, lot: Double) {
+        val retrofitAPI = RetrofitConnection.getInstance().create(
+            CrossroadService::class.java
+        )
+        Log.i(TAG, "getCrossroadDataInRange: retrofitAPI 생성")
+
+        val boundingBoxAround = getBoundingBoxAround(lat, lot)
+        Log.i(TAG, "getCrossroadDataInRange: getBoundingBoxAround() 실행 $boundingBoxAround")
+
+        retrofitAPI.getCrossroadDataInRange(
+            CrossroadRequest(
+                swLat = boundingBoxAround.first.lat,
+                swLot = boundingBoxAround.first.lot,
+                neLat = boundingBoxAround.second.lat,
+                neLot = boundingBoxAround.second.lot
+            )
+        ).enqueue(object : retrofit2.Callback<List<CrossroadResponse>> {
+            override fun onResponse(
+                call: Call<List<CrossroadResponse>>,
+                response: Response<List<CrossroadResponse>>
+            ) {
+                if (response.isSuccessful) {
+                    Toast.makeText(this@MainActivity, "교차로 데이터 업데이트 완료", Toast.LENGTH_LONG).show()
+                    response.body()?.let {
+                        Log.d(TAG, "onResponse: $it")
+                    }
+                } else {
+                    Toast.makeText(this@MainActivity, "교차로 데이터를 가져오는데 실패했습니다.", Toast.LENGTH_LONG)
+                        .show()
+                }
+            }
+
+            override fun onFailure(call: Call<List<CrossroadResponse>?>, t: Throwable) {
+                t.printStackTrace()
+                Log.w(TAG, "getCrossroadDataInRange: onFailure: 교차로 데이터를 가져오는데 실패했습니다. ${t.message}")
+                Toast.makeText(this@MainActivity, "교차로 데이터를 가져오는데 실패했습니다.", Toast.LENGTH_LONG)
+                    .show()
+            }
+        })
     }
 
     private fun checkAllPermissions() {
