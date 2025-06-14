@@ -3,8 +3,8 @@ package com.goose.crosstimer.crossroad.dto;
 
 public record CrossroadRangeRequest(
         Double swLat,
-        Double swLot,
+        Double swLng,
         Double neLat,
-        Double neLot
+        Double neLng
 ) {
 }

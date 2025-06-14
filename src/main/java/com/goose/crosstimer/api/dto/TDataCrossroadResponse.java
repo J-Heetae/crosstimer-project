@@ -1,5 +1,7 @@
 package com.goose.crosstimer.api.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.time.OffsetDateTime;
 
 public record TDataCrossroadResponse(
@@ -7,7 +9,7 @@ public record TDataCrossroadResponse(
         String itstNm,            // 교차로 한글명
         String itstEngNm,         // 교차로 영문명
         Double mapCtptIntLat,     // 중심점 위도
-        Double mapCtptIntLot,     // 중심점 경도
+        @JsonProperty("mapCtptIntLot") Double mapCtptIntLng,     // 중심점 경도
         Double laneWidth,         // 차로폭
         String limitSpedTypeNm,   // 제한속도유형명
         String limitSped,        // 제한속도

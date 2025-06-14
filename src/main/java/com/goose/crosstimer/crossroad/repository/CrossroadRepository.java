@@ -9,6 +9,6 @@ public interface CrossroadRepository extends JpaRepository<Crossroad, Integer> {
 
     List<Crossroad> findByLatBetweenAndLngBetween(
             Double swLat, Double neLat,
-            Double swLot, Double neLot
+            Double swLng, Double neLng
     );
 }

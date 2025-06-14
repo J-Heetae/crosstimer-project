@@ -9,7 +9,7 @@ public class CrossroadMapper {
                 .itstId(dto.itstId())
                 .name(dto.itstNm())
                 .lat(dto.mapCtptIntLat())
-                .lng(dto.mapCtptIntLot())
+                .lng(dto.mapCtptIntLng())
                 .build();
     }
 }
