@@ -18,6 +18,12 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MarkerOptions
 import com.goose.crosstimerapp.databinding.ActivityMainBinding
 import com.goose.crosstimerapp.retrofit.CrossroadRequest
 import com.goose.crosstimerapp.retrofit.CrossroadResponse
@@ -27,12 +33,16 @@ import retrofit2.Call
 import retrofit2.Response
 import kotlin.math.cos
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     lateinit var binding: ActivityMainBinding
     lateinit var locationProvider: LocationProvider
-    lateinit var retrofitConnection: RetrofitConnection
 
     private val TAG = MainActivity::class.java.simpleName
+
+    private var mMap: GoogleMap? = null
+
+    var latitude: Double = 0.0
+    var longitude: Double = 0.0
 
     //런타임 권한 요청 코드
     private val PERMISSION_REQUEST_CODE = 100
@@ -61,38 +71,81 @@ class MainActivity : AppCompatActivity() {
         }
 
         checkAllPermissions()
+
+        val mapFragment = supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment?
+        mapFragment?.getMapAsync(this)
+
+        setButton()
     }
 
-    private fun updateUI() {
+    override fun onMapReady(googleMap: GoogleMap) {
+        mMap = googleMap
+
+        mMap?.let { map ->
+            map.setMaxZoomPreference(20.0f)
+            map.setMinZoomPreference(12.0f)
+
+            map.uiSettings.apply {
+                isZoomControlsEnabled = true
+            }
+
+//            getCurrentLocationAndUpdateUI()
+        }
+    }
+
+    private fun getCurrentLocationAndUpdateUI() {
         locationProvider = LocationProvider(this@MainActivity)
 
-        // 현재 위치 요청
         locationProvider.getCurrentLocation { location ->
             if (location != null) {
-                val lat = location.latitude
-                val lot = location.longitude
-                Log.d(TAG, "현재 위치: $lat, $lot")
+                latitude = location.latitude
+                longitude = location.longitude
 
-                getCrossroadDataInRange(lat, lot)
+                Log.i(TAG, "getCurrentLocationAndUpdateUI: 현재 위치 $latitude , $longitude")
 
-                // 위치 정보를 UI에 표시하거나 서버로 전송하는 등 원하는 작업 수행
+                moveCameraToCurrentLocation()
+                setMarker(latitude, longitude, "현재 위치")
             } else {
-                Log.w(TAG, "위치 정보를 가져올 수 없습니다.")
-                Toast.makeText(this, "위치 정보를 가져올 수 없습니다.", Toast.LENGTH_LONG).show()
+                Log.w(TAG, "getCurrentLocationAndUpdateUI: 현재 위치 정보를 가져올 수 없습니다.")
+                Toast.makeText(this, "현재 위치 정보를 가져올 수 없습니다.", Toast.LENGTH_LONG).show()
             }
         }
     }
 
-    data class LatLot(val lat: Double, val lot: Double)
+    private fun setButton() {
+        binding.fab.setOnClickListener {
+            Log.w(TAG, "setButton: getCurrentLocationAndUpdateUI() 호출")
+            getCurrentLocationAndUpdateUI()
+        }
+    }
 
-    private fun getBoundingBoxAround(lat: Double, lot: Double): Pair<LatLot, LatLot> {
-        val radius: Double = 500.0
+    private fun setMarker(latitude: Double, longitude: Double, titleString: String) {
+        mMap?.let { map ->
+            map.clear()
+
+            val currentLocation = LatLng(latitude, longitude)
+
+            val markerOption = MarkerOptions()
+                .position(currentLocation)
+                .title(titleString)
+
+            map.addMarker(markerOption)
+        }
+    }
+
+    private fun moveCameraToCurrentLocation() {
+        Log.i(TAG, "setButton: 현재 위치로 카메라 이동")
+        mMap?.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(latitude, longitude), 18.0f))
+    }
+
+    private fun getBoundingBoxAround(lat: Double, lot: Double): Pair<LatLng, LatLng> {
+        val radius = 500.0
 
         val latOffset = radius / 111000.0
         val lotOffset = radius / (111000.0 * cos(Math.toRadians(lat)))
 
-        val southWest = LatLot(lat - latOffset, lot - lotOffset) // 왼쪽 아래
-        val northEast = LatLot(lat + latOffset, lot + lotOffset) // 오른쪽 위
+        val southWest = LatLng(lat - latOffset, lot - lotOffset) // 왼쪽 아래
+        val northEast = LatLng(lat + latOffset, lot + lotOffset) // 오른쪽 위
 
         return Pair(southWest, northEast)
     }
@@ -108,10 +161,10 @@ class MainActivity : AppCompatActivity() {
 
         retrofitAPI.getCrossroadDataInRange(
             CrossroadRequest(
-                swLat = boundingBoxAround.first.lat,
-                swLot = boundingBoxAround.first.lot,
-                neLat = boundingBoxAround.second.lat,
-                neLot = boundingBoxAround.second.lot
+                swLat = boundingBoxAround.first.latitude,
+                swLot = boundingBoxAround.first.longitude,
+                neLat = boundingBoxAround.second.latitude,
+                neLot = boundingBoxAround.second.longitude
             )
         ).enqueue(object : retrofit2.Callback<List<CrossroadResponse>> {
             override fun onResponse(
@@ -131,7 +184,10 @@ class MainActivity : AppCompatActivity() {
 
             override fun onFailure(call: Call<List<CrossroadResponse>?>, t: Throwable) {
                 t.printStackTrace()
-                Log.w(TAG, "getCrossroadDataInRange: onFailure: 교차로 데이터를 가져오는데 실패했습니다. ${t.message}")
+                Log.w(
+                    TAG,
+                    "getCrossroadDataInRange: onFailure: 교차로 데이터를 가져오는데 실패했습니다. ${t.message}"
+                )
                 Toast.makeText(this@MainActivity, "교차로 데이터를 가져오는데 실패했습니다.", Toast.LENGTH_LONG)
                     .show()
             }
@@ -160,10 +216,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkRuntimeLocationPermissions() {
         if (isLocationPermissionsAvailable()) {
-            Log.w(TAG, "checkRuntimeLocationPermissions: 위치 권한 사용 가능")
+            Log.i(TAG, "checkRuntimeLocationPermissions: 위치 권한 사용 가능, getCurrentLocationAndUpdateUI 호출")
             //위치 정보 데이터 가져오기
-            updateUI()
-            Log.i(TAG, "checkRuntimeLocationPermissions: updateUI() 호출")
+            getCurrentLocationAndUpdateUI()
         } else {
             Log.w(TAG, "checkRuntimeLocationPermissions: 위치 권한 사용 불가")
             requestRuntimeLocationPermissions()
@@ -201,11 +256,8 @@ class MainActivity : AppCompatActivity() {
                     break
                 }
             }
-
-            Log.w(TAG, "onRequestPermissionsResult: 위치 권한 사용 가능")
-            //위치 정보 데이터 가져오기
-            updateUI()
-            Log.i(TAG, "onRequestPermissionsResult: updateUI() 호출")
+            Log.i(TAG, "onRequestPermissionsResult: 위치 권한 사용 가능, getCurrentLocationAndUpdateUI 호출")
+            getCurrentLocationAndUpdateUI()
         } else {
             appFinishWithToast("위치 권한을 사용할 수 없어 앱을 종료합니다.")
         }
@@ -274,10 +326,9 @@ class MainActivity : AppCompatActivity() {
         ) { result ->
             Log.d(TAG, "registerLocationAccessPermissionLauncher: $result")
             if (isLocationPermissionsAvailable()) {
-                Log.w(TAG, "registerLocationAccessPermissionLauncher: 위치 권한 사용 가능")
+                Log.w(TAG, "registerLocationAccessPermissionLauncher: 위치 권한 사용 가능, getCurrentLocationAndUpdateUI 호출")
                 //위치 정보 데이터 가져오기
-                updateUI()
-                Log.i(TAG, "registerLocationAccessPermissionLauncher: updateUI() 호출")
+                getCurrentLocationAndUpdateUI()
             } else {
                 appFinishWithToast("위치 권한을 사용할 수 없어 앱을 종료합니다.")
             }

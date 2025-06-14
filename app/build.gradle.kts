@@ -52,7 +52,11 @@ dependencies {
 
     ksp(libs.androidx.room.compiler)
 
-    //레트로핏
+    //Retrofit
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
+
+    //Google map
+    implementation(libs.play.services.maps)
+    implementation(libs.play.services.location)
 }
