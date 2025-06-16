@@ -2,7 +2,9 @@ package com.goose.crosstimer.signal.mapper;
 
 import com.goose.crosstimer.api.dto.TDataSignalResponse;
 import com.goose.crosstimer.signal.domain.SignalInfo;
+import org.mapstruct.Mapper;
 
+@Mapper(componentModel = "spring")
 public class SignalInfoMapper {
     public static SignalInfo fromDto(TDataSignalResponse dto) {
         return SignalInfo.builder()
