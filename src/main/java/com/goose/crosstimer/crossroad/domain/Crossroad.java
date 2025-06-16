@@ -1,9 +1,7 @@
 package com.goose.crosstimer.crossroad.domain;
 
-import com.goose.crosstimer.signal.domain.SignalInfo;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.*;
 
