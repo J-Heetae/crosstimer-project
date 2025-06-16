@@ -13,7 +13,7 @@ import static lombok.AccessLevel.PROTECTED;
 @Getter
 @Entity
 @Table(name = "crossroad")
-@ToString(exclude = "signalInfo")
+@ToString
 @NoArgsConstructor(access = PROTECTED)
 public class Crossroad {
     @Id
@@ -21,8 +21,6 @@ public class Crossroad {
     private String name;
     private Double lat;
     private Double lng;
-    @OneToOne(mappedBy = "crossroad")
-    private SignalInfo signalInfo;
 
     @Builder
     private Crossroad(Integer itstId, String name, Double lat, Double lng) {

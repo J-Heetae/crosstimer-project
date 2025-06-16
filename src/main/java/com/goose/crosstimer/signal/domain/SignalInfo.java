@@ -1,6 +1,5 @@
 package com.goose.crosstimer.signal.domain;
 
-import com.goose.crosstimer.crossroad.domain.Crossroad;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
@@ -13,14 +12,11 @@ import static lombok.AccessLevel.PROTECTED;
 @Entity
 @Table(name = "signal_info")
 @NoArgsConstructor(access = PROTECTED)
-@ToString(exclude = "crossroad")
+@ToString
 public class SignalInfo {
     @Id
     private Integer itstId;
     private Long trsmUtcTime;
-    @OneToOne
-    @JoinColumn(name = "itstId")
-    private Crossroad crossroad;
 
     private Integer ntPdsgRmdrCs;
     private String ntPdsgStatNm;
