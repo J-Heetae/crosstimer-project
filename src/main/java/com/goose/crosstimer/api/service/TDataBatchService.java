@@ -7,9 +7,12 @@ import com.goose.crosstimer.api.dto.TDataRequest;
 import com.goose.crosstimer.crossroad.domain.Crossroad;
 import com.goose.crosstimer.signal.domain.SignalInfo;
 import com.goose.crosstimer.crossroad.mapper.CrossroadMapper;
+import com.goose.crosstimer.signal.domain.SignalLog;
 import com.goose.crosstimer.signal.mapper.SignalInfoMapper;
 import com.goose.crosstimer.crossroad.repository.CrossroadRepository;
+import com.goose.crosstimer.signal.mapper.SignalLogMapper;
 import com.goose.crosstimer.signal.repository.SignalInfoRepository;
+import com.goose.crosstimer.signal.repository.SignalLogRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -21,10 +24,14 @@ import java.util.List;
 @RequiredArgsConstructor
 public class TDataBatchService {
     private final TDataApiClient client;
+
     private final CrossroadRepository crossroadRepository;
     private final SignalInfoRepository signalInfoRepository;
+    private final SignalLogRepository signalLogRepository;
 
-    @Scheduled(fixedRate = 300000L)
+    private final SignalLogMapper signalLogMapper;
+
+//    @Scheduled(fixedRate = 300_000L)
     public void fetchCrossroadData() {
         int pageNo = 1;
         final int numOfRows = 1000;
@@ -50,7 +57,7 @@ public class TDataBatchService {
         crossroadRepository.saveAll(crossroadList);
     }
 
-    @Scheduled(fixedRate = 300000L)
+//    @Scheduled(fixedRate = 300_000L)
     public void fetchSignalInfo() {
         final int numOfRows = 1000;
         List<TDataSignalResponse> signalResponseDtoList = new ArrayList<>();
@@ -62,5 +69,19 @@ public class TDataBatchService {
                 .toList();
 
         signalInfoRepository.saveAll(signalInfoList);
+    }
+
+    @Scheduled(fixedRate = 300_000L)
+    public void fetchSignalLog() {
+        final int numOfRows = 1000;
+        List<TDataSignalResponse> signalResponseDtoList = new ArrayList<>();
+        for (int pageNo = 1; pageNo <= 10; pageNo++) {
+            signalResponseDtoList.addAll(client.getSignalInfo(TDataRequest.fromPagination(pageNo, numOfRows)));
+        }
+        List<SignalLog> signalLogList = signalResponseDtoList.stream()
+                .map(signalLogMapper::toDocument)
+                .toList();
+
+        signalLogRepository.saveAll(signalLogList);
     }
 }
