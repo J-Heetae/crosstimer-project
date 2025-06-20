@@ -25,11 +25,8 @@ import java.util.List;
 public class TDataBatchService {
     private final TDataApiClient client;
 
-    private final CrossroadRepository crossroadRepository;
-    private final SignalInfoRepository signalInfoRepository;
-    private final SignalLogRepository signalLogRepository;
-
-    private final SignalLogMapper signalLogMapper;
+    private final CrossroadJpaRepository crossroadJpaRepository;
+    private final SignalDirectionLogMongoRepository signalDirectionLogMongoRepository;
 
 //    @Scheduled(fixedRate = 300_000L)
     public void fetchCrossroadData() {
@@ -57,30 +54,51 @@ public class TDataBatchService {
         crossroadRepository.saveAll(crossroadList);
     }
 
-//    @Scheduled(fixedRate = 300_000L)
-    public void fetchSignalInfo() {
-        final int numOfRows = 1000;
-        List<TDataSignalResponse> signalResponseDtoList = new ArrayList<>();
-        for (int pageNo = 1; pageNo <= 10; pageNo++) {
-            signalResponseDtoList.addAll(client.getSignalInfo(TDataRequest.fromPagination(pageNo, numOfRows)));
-        }
-        List<SignalInfo> signalInfoList = signalResponseDtoList.stream()
-                .map(SignalInfoMapper::fromDto)
-                .toList();
+    //    @PostConstruct
+    @Transactional
+    public void getSignalLog() {
+        Set<Integer> crossroadSet = new HashSet<>();
 
-        signalInfoRepository.saveAll(signalInfoList);
-    }
+        final int MAX_CALLS = 500;
+        for (int call = 1; call <= MAX_CALLS; call++) {
+            List<SignalDirectionLog> saveLogList = new ArrayList<>();
 
-    @Scheduled(fixedRate = 300_000L)
-    public void fetchSignalLog() {
-        final int numOfRows = 1000;
-        List<TDataSignalResponse> signalResponseDtoList = new ArrayList<>();
-        for (int pageNo = 1; pageNo <= 10; pageNo++) {
-            signalResponseDtoList.addAll(client.getSignalInfo(TDataRequest.fromPagination(pageNo, numOfRows)));
-        }
-        List<SignalLog> signalLogList = signalResponseDtoList.stream()
-                .map(signalLogMapper::toDocument)
-                .toList();
+            List<TDataSignalResponse> responseList;
+            try {
+                Thread.sleep(1000);
+                responseList = client.getSignalInfo(TDataRequest.fromPagination(call, 1000));
+                if (responseList == null) {
+                    log.warn("client.getSignalInfo returned null for page {}", call);
+                    break;
+                }
+            } catch (Exception e) {
+                log.error("TData API 호출 실패(page {})", call, e);
+                break;
+            }
+
+            if (responseList.isEmpty()) {
+                break;
+            }
+
+            for (TDataSignalResponse response : responseList) {
+                crossroadSet.add(response.itstId());
+
+                Map<String, SignalData> directionMap = getStringSignalDataMap(response);
+
+                List<String> exceptionStatus = List.of("dark", "null");
+                List<Integer> exceptionSeconds = List.of(36001);
+
+                for (String direction : directionMap.keySet()) {
+                    SignalData currDirection = directionMap.get(direction);
+
+                    if (currDirection.status() == null || currDirection.remainingDeciSeconds() == null) {
+                        continue;
+                    }
+
+                    if (exceptionStatus.contains(currDirection.status()) ||
+                            exceptionSeconds.contains(currDirection.remainingDeciSeconds())) {
+                        continue;
+                    }
 
         signalLogRepository.saveAll(signalLogList);
     }
