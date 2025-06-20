@@ -28,7 +28,7 @@ public class Crossroad {
 
     @OneToMany(mappedBy = "crossroad")
     @JsonManagedReference
-    List<SignalCycle> cycleList = new ArrayList<>();
+    List<SignalCycle> signalCycleList = new ArrayList<>();
 
     @Builder
     private Crossroad(Integer itstId, String name, Double lat, Double lng) {
