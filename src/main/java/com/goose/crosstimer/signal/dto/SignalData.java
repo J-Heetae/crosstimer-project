@@ -1,4 +1,4 @@
-package com.goose.crosstimer.common.dto;
+package com.goose.crosstimer.signal.dto;
 
 /**
  * 방향별 신호 정보 (잔여 초 + 상태)
