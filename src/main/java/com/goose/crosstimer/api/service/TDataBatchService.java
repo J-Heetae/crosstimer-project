@@ -4,121 +4,107 @@ import com.goose.crosstimer.api.client.TDataApiClient;
 import com.goose.crosstimer.api.dto.TDataCrossroadResponse;
 import com.goose.crosstimer.api.dto.TDataSignalResponse;
 import com.goose.crosstimer.api.dto.TDataRequest;
-import com.goose.crosstimer.common.dto.SignalData;
-import com.goose.crosstimer.crossroad.domain.Crossroad;
-import com.goose.crosstimer.signal.domain.SignalDirectionLog;
+import com.goose.crosstimer.common.util.RetryExecutor;
+import com.goose.crosstimer.signal.dto.SignalData;
+import com.goose.crosstimer.common.exception.CustomException;
 import com.goose.crosstimer.crossroad.mapper.CrossroadMapper;
 import com.goose.crosstimer.crossroad.repository.CrossroadJpaRepository;
-import com.goose.crosstimer.signal.repository.SignalDirectionLogMongoRepository;
+import com.goose.crosstimer.signal.domain.SignalLog;
+import com.goose.crosstimer.signal.service.SignalLogService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.*;
 
+import static com.goose.crosstimer.common.exception.ErrorCode.BATCH_LOG_ERROR;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class TDataBatchService {
-    private final TDataApiClient client;
+    private static final int MAX_CALLS = 1000;
 
+    private final TDataApiClient client;
     private final CrossroadJpaRepository crossroadJpaRepository;
-    private final SignalDirectionLogMongoRepository signalDirectionLogMongoRepository;
+    private final SignalLogService signalLogService;
+    private final RetryExecutor retryExecutor;
 
     //    @Scheduled(fixedRate = 300_000L)
     public void fetchCrossroadData() {
-        int pageNo = 1;
-        final int numOfRows = 1000;
         List<TDataCrossroadResponse> crossroadInfoList = new ArrayList<>();
 
+        int pageNo = 1;
+        final int numOfRows = 1000;
         while (true) {
             List<TDataCrossroadResponse> temp = client.getCrossroadInfo(
-                    TDataRequest.fromPagination(pageNo, numOfRows)
+                    TDataRequest.fromPagination(pageNo++, numOfRows)
             );
 
-            if (temp.isEmpty()) {
+            if (temp.isEmpty()) { //더 이상 조회 안될때까지 반복
                 break;
             }
-
             crossroadInfoList.addAll(temp);
-
-            pageNo++;
         }
-        List<Crossroad> crossroadList = crossroadInfoList.stream()
+        crossroadJpaRepository.saveAll(crossroadInfoList.stream()
                 .map(CrossroadMapper::fromDto)
-                .toList();
-
-        crossroadJpaRepository.saveAll(crossroadList);
+                .toList());
     }
 
     //    @PostConstruct
     @Transactional
     public void getSignalLog() {
-        Set<Integer> crossroadSet = new HashSet<>();
+        List<SignalLog> saveLogList = new ArrayList<>();
 
-        final int MAX_CALLS = 500;
-        for (int call = 1; call <= MAX_CALLS; call++) {
-            List<SignalDirectionLog> saveLogList = new ArrayList<>();
+        try {
+            for (int call = 1; call <= MAX_CALLS; call++) {
+                //신호 잔여시간 정보 API 호출
+                List<TDataSignalResponse> responseList =
+                        client.getSignalInfo(TDataRequest.fromPagination(call, 1000));
 
-            List<TDataSignalResponse> responseList;
-            try {
+                for (TDataSignalResponse response : responseList) {
+                    //교차로의 방향별로 신호 구분
+                    Map<String, SignalData> directionMap = getStringSignalDataMap(response);
+
+                    for (String direction : directionMap.keySet()) {
+                        SignalData currDirection = directionMap.get(direction);
+
+                        if (!validateSignalData((currDirection))) {
+                            continue;
+                        }
+
+                        saveLogList.add(SignalLog.builder()
+                                .itstId(response.itstId())
+                                .direction(direction)
+                                .trsmUtcTime(response.trsmUtcTime())
+                                .loggedAt(Instant.now())
+                                .remainingDeciSeconds(currDirection.remainingDeciSeconds())
+                                .status(getFixedStatus(currDirection))
+                                .build());
+                    }
+                }
                 Thread.sleep(1000);
-                responseList = client.getSignalInfo(TDataRequest.fromPagination(call, 1000));
-                if (responseList == null) {
-                    log.warn("client.getSignalInfo returned null for page {}", call);
-                    break;
-                }
-            } catch (Exception e) {
-                log.error("TData API 호출 실패(page {})", call, e);
-                break;
             }
-
-            if (responseList.isEmpty()) {
-                break;
-            }
-
-            for (TDataSignalResponse response : responseList) {
-                crossroadSet.add(response.itstId());
-
-                Map<String, SignalData> directionMap = getStringSignalDataMap(response);
-
-                List<String> exceptionStatus = List.of("dark", "null");
-                List<Integer> exceptionSeconds = List.of(36001);
-
-                for (String direction : directionMap.keySet()) {
-                    SignalData currDirection = directionMap.get(direction);
-
-                    if (currDirection.status() == null || currDirection.remainingDeciSeconds() == null) {
-                        continue;
-                    }
-
-                    if (exceptionStatus.contains(currDirection.status()) ||
-                            exceptionSeconds.contains(currDirection.remainingDeciSeconds())) {
-                        continue;
-                    }
-
-                    String fixedStatus = (currDirection.status().equals("stop-And-Remain")) ? "RED" : "GREEN";
-
-                    SignalDirectionLog signalDirectionLog = SignalDirectionLog.builder()
-                            .itstId(response.itstId())
-                            .direction(direction)
-                            .trsmUtcTime(response.trsmUtcTime())
-                            .loggedAt(Instant.now())
-                            .remainingDeciSeconds(currDirection.remainingDeciSeconds())
-                            .status(fixedStatus)
-                            .build();
-
-                    saveLogList.add(signalDirectionLog);
-                }
-            }
-
-            signalDirectionLogMongoRepository.saveAll(saveLogList);
-            log.info("호출#{}, 현재 개수={}", call, crossroadSet.size());
+        } catch (Exception e) {
+            throw new CustomException(BATCH_LOG_ERROR, e);
         }
-        log.info("총 itstId의 갯수 = {}", crossroadSet.size());
+
+        retryExecutor.runWithRetry(() -> signalLogService.saveLogs(saveLogList), "SignalLog 저장");
+        log.info("SignalLog 총 {}개 저장 완료", saveLogList.size());
+    }
+
+    private boolean validateSignalData(SignalData signalData) {
+        return signalData.status() != null &&
+                signalData.remainingDeciSeconds() != null &&
+                !signalData.status().equals("dark") &&
+                !signalData.status().equals("null") &&
+                signalData.remainingDeciSeconds() != 36001;
+    }
+
+    private String getFixedStatus(SignalData signalData) {
+        return signalData.status().equals("stop-And-Remain") ? "RED" : "GREEN";
     }
 
     private static Map<String, SignalData> getStringSignalDataMap(TDataSignalResponse response) {
