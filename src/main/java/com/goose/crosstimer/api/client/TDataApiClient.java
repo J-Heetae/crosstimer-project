@@ -3,18 +3,18 @@ package com.goose.crosstimer.api.client;
 import com.goose.crosstimer.api.dto.TDataRequest;
 import com.goose.crosstimer.api.dto.TDataCrossroadResponse;
 import com.goose.crosstimer.api.dto.TDataSignalResponse;
+import com.goose.crosstimer.common.exception.CustomException;
+import com.goose.crosstimer.common.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriBuilder;
-import reactor.core.publisher.Mono;
 
 import java.net.URI;
 import java.time.Duration;
 import java.util.List;
-import java.util.Optional;
 
 @Slf4j
 @Service
@@ -29,18 +29,22 @@ public class TDataApiClient {
     private String apiKey;
 
     public List<TDataCrossroadResponse> getCrossroadInfo(TDataRequest requestDto) {
-        return webClient.get()
-                .uri(uriBuilder -> applyCommonParams(uriBuilder
-                                .scheme(URI.create(BASE_URL).getScheme())
-                                .host(URI.create(BASE_URL).getHost())
-                                .path("/apig/apiman-gateway/tapi/v2xCrossroadMapInformation/1.0"),
-                        requestDto))
-                .retrieve()
-                .bodyToFlux(TDataCrossroadResponse.class)
-                .doOnSubscribe(sub -> log.info("교차로 MAP API 호출 시작"))
-                .doOnError(error -> log.error("에러 발생: " + error.getMessage()))
-                .collectList()
-                .block(Duration.ofSeconds(DEFAULT_TIMEOUT_SECONDS));
+        try {
+            return webClient.get()
+                    .uri(uriBuilder -> applyCommonParams(uriBuilder
+                                    .scheme(URI.create(BASE_URL).getScheme())
+                                    .host(URI.create(BASE_URL).getHost())
+                                    .path("/apig/apiman-gateway/tapi/v2xCrossroadMapInformation/1.0"),
+                            requestDto))
+                    .retrieve()
+                    .bodyToFlux(TDataCrossroadResponse.class)
+                    .doOnSubscribe(sub -> log.info("교차로 Map 정보 API 호출"))
+                    .doOnError(error -> log.error("API 호출 실패, 에러 발생: {}", error.getMessage()))
+                    .collectList()
+                    .block(Duration.ofSeconds(DEFAULT_TIMEOUT_SECONDS));
+        } catch (Exception e) {
+            throw new CustomException(ErrorCode.EXTERNAL_CROSSROAD_API_ERROR, e);
+        }
     }
 
     public List<TDataSignalResponse> getSignalInfo(TDataRequest requestDto) {
@@ -53,31 +57,13 @@ public class TDataApiClient {
                             requestDto))
                     .retrieve()
                     .bodyToFlux(TDataSignalResponse.class)
-                    .doOnSubscribe(sub -> log.info("신호 잔여시간 정보 API 호출 시작"))
-                    .doOnError(error -> log.error("에러 발생: " + error.getMessage()))
+                    .doOnSubscribe(sub -> log.info("신호제어기 신호 잔여시간 정보서비스 API 호출"))
+                    .doOnError(error -> log.error("API 호출 실패, 에러 발생: {}", error.getMessage()))
                     .collectList()
                     .block(Duration.ofSeconds(DEFAULT_TIMEOUT_SECONDS));
         } catch (Exception e) {
-            log.error("API 호출 실패: {}",e.getMessage());
-            return List.of();
+            throw new CustomException(ErrorCode.EXTERNAL_SIGNAL_API_ERROR, e);
         }
-    }
-
-    public Mono<Optional<TDataSignalResponse>> getFirstSignalByItstIdAsync(Integer itstId) {
-        return webClient.get()
-                .uri(uriBuilder -> uriBuilder
-                        .scheme(URI.create(BASE_URL).getScheme())
-                        .host(URI.create(BASE_URL).getHost())
-                        .path("/apig/apiman-gateway/tapi/v2xSignalPhaseTimingFusionInformation/1.0")
-                        .queryParam("apikey", apiKey)
-                        .queryParam("itstId", itstId)
-                        .build())
-                .retrieve()
-                .bodyToFlux(TDataSignalResponse.class)
-                .next() // 가장 첫 번째 응답 하나만
-                .timeout(Duration.ofSeconds(DEFAULT_TIMEOUT_SECONDS)) // 응답 제한 시간
-                .map(Optional::of)
-                .onErrorResume(e -> Mono.just(Optional.empty())); // 실패 시 빈 값 반환
     }
 
     private URI applyCommonParams(UriBuilder builder, TDataRequest requestDto) {

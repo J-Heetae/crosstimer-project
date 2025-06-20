@@ -8,7 +8,6 @@ import com.goose.crosstimer.crossroad.dto.CrossroadWithSignalResponse;
 import com.goose.crosstimer.crossroad.repository.CrossroadJpaRepository;
 import com.goose.crosstimer.signal.domain.SignalCycle;
 import com.goose.crosstimer.signal.dto.SignalCycleResponse;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -55,9 +54,15 @@ public class CrossroadService {
     }
 
     public List<Crossroad> getCrossroadsInRange(CrossroadRangeRequest request) {
-        return crossroadJpaRepository.findByLatBetweenAndLngBetween(
+        List<Crossroad> crossroadList = crossroadJpaRepository.findByLatBetweenAndLngBetween(
                 request.swLat(), request.neLat(),
                 request.swLng(), request.neLng()
         );
+
+        if (crossroadList.isEmpty()) { //교차로가 존재하지 않을 경우
+            throw new CustomException(ErrorCode.CROSSROAD_RANGE_EMPTY);
+        }
+        
+        return crossroadList;
     }
 }
