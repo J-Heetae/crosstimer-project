@@ -5,8 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
-public interface CrossroadRepository extends JpaRepository<Crossroad, Integer> {
-
+public interface CrossroadJpaRepository extends JpaRepository<Crossroad, Integer> {
     List<Crossroad> findByLatBetweenAndLngBetween(
             Double swLat, Double neLat,
             Double swLng, Double neLng
