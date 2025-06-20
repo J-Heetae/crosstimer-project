@@ -10,8 +10,8 @@ import java.time.Instant;
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-@Document("signal_direction_logs")
-public class SignalDirectionLog {
+@Document("signal_logs")
+public class SignalLog {
     @Id
     private String id;
     private Integer itstId;
