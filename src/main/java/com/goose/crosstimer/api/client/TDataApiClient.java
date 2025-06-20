@@ -4,6 +4,7 @@ import com.goose.crosstimer.api.dto.TDataRequest;
 import com.goose.crosstimer.api.dto.TDataCrossroadResponse;
 import com.goose.crosstimer.api.dto.TDataSignalResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -15,13 +16,14 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TDataApiClient {
     private final WebClient webClient;
 
     private static final String BASE_URL = "https://t-data.seoul.go.kr";
-    private static final int DEFAULT_TIMEOUT_SECONDS = 10;
+    private static final int DEFAULT_TIMEOUT_SECONDS = 60;
 
     @Value("${tdata.api-key}")
     private String apiKey;
@@ -35,9 +37,8 @@ public class TDataApiClient {
                         requestDto))
                 .retrieve()
                 .bodyToFlux(TDataCrossroadResponse.class)
-                .doOnSubscribe(sub -> System.out.println("교차로 MAP API 호출 시작"))
-                .doOnNext(dto -> System.out.println("받은 응답: " + dto))
-                .doOnError(error -> System.out.println("에러 발생: " + error.getMessage()))
+                .doOnSubscribe(sub -> log.info("교차로 MAP API 호출 시작"))
+                .doOnError(error -> log.error("에러 발생: " + error.getMessage()))
                 .collectList()
                 .block(Duration.ofSeconds(DEFAULT_TIMEOUT_SECONDS));
     }
@@ -52,13 +53,12 @@ public class TDataApiClient {
                             requestDto))
                     .retrieve()
                     .bodyToFlux(TDataSignalResponse.class)
-                    .doOnSubscribe(sub -> System.out.println("신호 잔여시간 정보 API 호출 시작"))
-                    .doOnNext(dto -> System.out.println("받은 응답: " + dto))
-                    .doOnError(error -> System.out.println("에러 발생: " + error.getMessage()))
+                    .doOnSubscribe(sub -> log.info("신호 잔여시간 정보 API 호출 시작"))
+                    .doOnError(error -> log.error("에러 발생: " + error.getMessage()))
                     .collectList()
                     .block(Duration.ofSeconds(DEFAULT_TIMEOUT_SECONDS));
         } catch (Exception e) {
-            System.out.println("[" + requestDto.getItstId() + "] API 호출 실패: " + e.getMessage());
+            log.error("API 호출 실패: {}",e.getMessage());
             return List.of();
         }
     }
