@@ -1,17 +1,14 @@
 package com.goose.crosstimer.api.service;
 
 import com.goose.crosstimer.api.client.TDataApiClient;
-import com.goose.crosstimer.api.dto.TDataCrossroadResponse;
 import com.goose.crosstimer.api.dto.TDataSignalResponse;
 import com.goose.crosstimer.api.dto.TDataRequest;
 import com.goose.crosstimer.common.util.RetryExecutor;
 import com.goose.crosstimer.signal.dto.SignalData;
 import com.goose.crosstimer.common.exception.CustomException;
-import com.goose.crosstimer.crossroad.mapper.CrossroadMapper;
-import com.goose.crosstimer.crossroad.repository.CrossroadJpaRepository;
 import com.goose.crosstimer.signal.domain.SignalLog;
 import com.goose.crosstimer.signal.service.SignalLogService;
-import jakarta.transaction.Transactional;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -26,38 +23,16 @@ import static com.goose.crosstimer.common.exception.ErrorCode.BATCH_LOG_ERROR;
 @RequiredArgsConstructor
 public class TDataBatchService {
     private static final int MAX_CALLS = 1000;
+    private static final int THREAD_TIME_WAIT_MILLIS = 1000;
 
     private final TDataApiClient client;
-    private final CrossroadJpaRepository crossroadJpaRepository;
     private final SignalLogService signalLogService;
     private final RetryExecutor retryExecutor;
 
-    //    @Scheduled(fixedRate = 300_000L)
-    public void fetchCrossroadData() {
-        List<TDataCrossroadResponse> crossroadInfoList = new ArrayList<>();
 
-        int pageNo = 1;
-        final int numOfRows = 1000;
-        while (true) {
-            List<TDataCrossroadResponse> temp = client.getCrossroadInfo(
-                    TDataRequest.fromPagination(pageNo++, numOfRows)
-            );
-
-            if (temp.isEmpty()) { //더 이상 조회 안될때까지 반복
-                break;
-            }
-            crossroadInfoList.addAll(temp);
-        }
-        crossroadJpaRepository.saveAll(crossroadInfoList.stream()
-                .map(CrossroadMapper::fromDto)
-                .toList());
-    }
-
-    //    @PostConstruct
-    @Transactional
+    @PostConstruct
     public void getSignalLog() {
         List<SignalLog> saveLogList = new ArrayList<>();
-
         try {
             for (int call = 1; call <= MAX_CALLS; call++) {
                 //신호 잔여시간 정보 API 호출
@@ -85,14 +60,14 @@ public class TDataBatchService {
                                 .build());
                     }
                 }
-                Thread.sleep(1000);
+                Thread.sleep(THREAD_TIME_WAIT_MILLIS);
             }
         } catch (Exception e) {
             throw new CustomException(BATCH_LOG_ERROR, e);
+        } finally {
+            retryExecutor.runWithRetry(() -> signalLogService.saveLogs(saveLogList), "SignalLog 저장");
+            log.info("SignalLog 총 {}개 저장 완료", saveLogList.size());
         }
-
-        retryExecutor.runWithRetry(() -> signalLogService.saveLogs(saveLogList), "SignalLog 저장");
-        log.info("SignalLog 총 {}개 저장 완료", saveLogList.size());
     }
 
     private boolean validateSignalData(SignalData signalData) {
