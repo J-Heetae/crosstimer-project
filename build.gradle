@@ -13,6 +13,10 @@ java {
     }
 }
 
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs += ['-parameters']
+}
+
 configurations {
     compileOnly {
         extendsFrom annotationProcessor
@@ -27,6 +31,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    implementation 'org.springframework.retry:spring-retry'
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
 
     //MongoDB
     implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
@@ -42,6 +48,17 @@ dependencies {
     //Redis
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     implementation 'org.redisson:redisson-spring-boot-starter:3.24.0' //분산 락
+
+    // JUnit5 + Testcontainers 지원
+    testImplementation 'org.testcontainers:junit-jupiter:1.21.0'
+
+    // Testcontainers의 Redis 모듈
+    testImplementation 'org.testcontainers:testcontainers:1.21.0'
+    testImplementation 'org.testcontainers:redis:1.21.0'
+
+    // JUnit5
+    testImplementation 'org.junit.jupiter:junit-jupiter-api'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'

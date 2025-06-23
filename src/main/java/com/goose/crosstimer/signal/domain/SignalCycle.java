@@ -27,14 +27,17 @@ public class SignalCycle {
     private String direction;
 
     @Column(nullable = false)
-    private Long referenceGreenStart;
+    private Integer greenSec;
 
     @Column(nullable = false)
-    private Integer greenSeconds;
-
-    @Column(nullable = false)
-    private Integer redSeconds;
+    private Integer redSec;
 
     @Column(nullable = false)
     private Instant updatedAt;
+
+    public void applyPrediction(int nextGreenSec, int nextRedSec, Instant now) {
+        this.greenSec = nextGreenSec;
+        this.redSec = nextRedSec;
+        this.updatedAt = now;
+    }
 }

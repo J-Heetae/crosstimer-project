@@ -15,6 +15,8 @@ public class SignalLogService {
     private final SignalLogMongoRepository logMongoRepository;
 
     public void saveLogs(List<SignalLog> logs) {
+        log.info("로그 MongoDB에 저장 시작");
         logMongoRepository.saveAll(logs);
+        log.info("로그 MongoDB에 저장 완료");
     }
 }

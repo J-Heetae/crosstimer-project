@@ -44,9 +44,8 @@ public class CrossroadService {
         for (SignalCycle signalCycle : signalCycleList) {
             signalCycleResponseList.add(new SignalCycleResponse(
                     signalCycle.getDirection(),
-                    signalCycle.getReferenceGreenStart(),
-                    signalCycle.getGreenSeconds(),
-                    signalCycle.getRedSeconds(),
+                    signalCycle.getGreenSec(),
+                    signalCycle.getRedSec(),
                     signalCycle.getUpdatedAt().toEpochMilli()
             ));
         }

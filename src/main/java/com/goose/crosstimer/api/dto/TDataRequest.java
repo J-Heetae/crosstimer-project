@@ -11,11 +11,11 @@ public class TDataRequest {
 
     private TDataRequest(int pageNo, int numOfRows, Integer itstId) {
         if (pageNo <= 0) {
-            throw new IllegalArgumentException("pageNo must be greater than 0");
+            throw new IllegalArgumentException("pageNo은 0보다 커야 합니다.");
         }
 
         if (numOfRows <= 0 || numOfRows > 1000) {
-            throw new IllegalArgumentException("numOfRows must be between 1 and 1000");
+            throw new IllegalArgumentException("numOfRows은 1 이상 1000 이하만 가능합니다.");
         }
 
         this.pageNo = pageNo;

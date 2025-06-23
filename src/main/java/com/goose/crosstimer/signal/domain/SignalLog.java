@@ -16,8 +16,8 @@ public class SignalLog {
     private String id;
     private Integer itstId;
     private String direction;
-    private Long trsmUtcTime;
+    private Instant signalTimestamp;
     private Instant loggedAt;
-    private Integer remainingDeciSeconds;
     private String status;
+    private Integer remaining;
 }
