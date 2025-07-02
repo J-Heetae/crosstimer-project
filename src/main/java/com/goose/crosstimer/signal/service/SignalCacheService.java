@@ -27,6 +27,11 @@ public class SignalCacheService {
         cacheRepository.save(signalCache);
     }
 
+    public SignalCache findCache(Integer itstId, String direction) {
+        String key = itstId + ":" + direction;
+        return cacheRepository.findById(key).orElse(null);
+    }
+
     public void cacheSignal(List<SignalLog> logList) {
         log.info("cacheSignal 시작: 로그 수 = {}", logList.size());
 
