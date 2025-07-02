@@ -6,7 +6,7 @@ import org.springframework.data.redis.core.RedisHash;
 
 import java.time.Instant;
 
-@RedisHash(value = "signal", timeToLive = 300)
+@RedisHash(value = "signal")
 @Getter
 @Setter
 @Builder
