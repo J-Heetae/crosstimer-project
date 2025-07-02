@@ -6,7 +6,6 @@ import com.goose.crosstimer.signal.domain.SignalCycle;
 import com.goose.crosstimer.signal.domain.SignalLog;
 import com.goose.crosstimer.signal.dto.HoltWinters;
 import com.goose.crosstimer.signal.repository.SignalCycleJpaRepository;
-import com.goose.crosstimer.signal.repository.SignalLogMongoRepository;
 import com.goose.crosstimer.common.util.RetryExecutor;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +31,6 @@ public class SignalPredictionService {
     private final SignalCycleJpaRepository cycleRepository;
     private final RetryExecutor retryExecutor;
 
-    // key = "itstId:direction"
     private final Map<String, HoltWinters> greenModels = new ConcurrentHashMap<>();
     private final Map<String, HoltWinters> redModels = new ConcurrentHashMap<>();
 
