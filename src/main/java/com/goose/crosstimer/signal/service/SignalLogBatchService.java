@@ -1,8 +1,7 @@
 package com.goose.crosstimer.signal.service;
 
-import com.goose.crosstimer.api.client.TDataApiClient;
-import com.goose.crosstimer.api.dto.TDataRequest;
 import com.goose.crosstimer.api.dto.TDataSignalResponse;
+import com.goose.crosstimer.api.service.TDataApiService;
 import com.goose.crosstimer.common.util.RetryExecutor;
 import com.goose.crosstimer.signal.domain.SignalLog;
 import com.goose.crosstimer.signal.dto.SignalData;
@@ -25,7 +24,7 @@ public class SignalLogBatchService {
     private static final int MAX_CALLS = 100;
     private static final int THREAD_TIME_WAIT_MILLIS = 3000;
 
-    private final TDataApiClient client;
+    private final TDataApiService tDataApiService;
     private final SignalLogService signalLogService;
     private final RetryExecutor retryExecutor;
     private final SignalCacheService cacheService;
@@ -46,7 +45,7 @@ public class SignalLogBatchService {
         for (int call = 1; call <= MAX_CALLS; call++) {
             //신호 잔여시간 정보 API 호출
             List<TDataSignalResponse> responseList =
-                    client.getSignalInfo(TDataRequest.fromPagination(call, 1000));
+                    tDataApiService.getSignalsMaxRow(call);
 
             if (responseList.isEmpty()) {
                 break;
