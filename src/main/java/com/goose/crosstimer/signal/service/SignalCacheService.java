@@ -1,12 +1,13 @@
 package com.goose.crosstimer.signal.service;
 
+import com.goose.crosstimer.api.service.TDataApiService;
 import com.goose.crosstimer.signal.domain.SignalCache;
 import com.goose.crosstimer.signal.domain.SignalCycle;
 import com.goose.crosstimer.signal.domain.SignalLog;
+import com.goose.crosstimer.signal.repository.SignalCacheRepository;
 import com.goose.crosstimer.signal.repository.SignalCycleJpaRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -17,10 +18,15 @@ import java.util.*;
 @Service
 @RequiredArgsConstructor
 public class SignalCacheService {
-    private final RedisTemplate<String, SignalCache> redisTemplate;
+    private final SignalCacheRepository cacheRepository;
     private final SignalCycleJpaRepository cycleRepository;
 
     private static final Duration TTL = Duration.ofMinutes(5L);
+
+    public void saveCache(Integer itstId, String direction, SignalCache signalCache) {
+        signalCache.setId(itstId + ":" + direction);
+        cacheRepository.save(signalCache);
+    }
 
     public void cacheSignal(List<SignalLog> logList) {
         log.info("cacheSignal 시작: 로그 수 = {}", logList.size());
@@ -57,16 +63,11 @@ public class SignalCacheService {
                     .updatedAt(Instant.now())
                     .build();
 
-            String redisKey = buildKey(recentLog.getItstId(), recentLog.getDirection().toUpperCase());
-            redisTemplate.opsForValue().set(redisKey, cache);
+            saveCache(recentLog.getItstId(), recentLog.getDirection().toUpperCase(), cache);
 //            log.info("캐시 저장: key={}, cache={}", redisKey, cache);
             cacheCount++;
         }
         log.info("cacheSignal 완료: 저장된 캐시 수 = {}, 스킵된 항목 수 = {}, 만료 시간 = {}", cacheCount, skipCount, TTL);
-    }
-
-    private String buildKey(Integer itstId, String direction) {
-        return "signal:" + itstId + ":" + direction.toUpperCase();
     }
 
     private String rawKey(Integer itstId, String direction) {

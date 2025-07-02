@@ -31,8 +31,8 @@ public class SignalLogBatchService {
     private final SignalCacheService cacheService;
     private final SignalPredictionService predictionService;
 
-    //    @Scheduled(cron = "0 0 9,12,15,18,21 * * *", zone = "Asia/Seoul")
-    @Scheduled(fixedRate = 500_000_000L)
+    @Scheduled(cron = "0 0 9,12,15,18,21 * * *", zone = "Asia/Seoul")
+//    @Scheduled(fixedRate = 500_000_000L)
     public void batchProcess() {
         List<SignalLog> responseList = callSignalApi();
         retryExecutor.runWithRetry(() -> signalLogService.saveLogs(responseList), "SignalLog MongoDB에 저장");
