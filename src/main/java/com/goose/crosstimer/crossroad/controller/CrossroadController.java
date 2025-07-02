@@ -1,7 +1,7 @@
 package com.goose.crosstimer.crossroad.controller;
 
-import com.goose.crosstimer.crossroad.domain.Crossroad;
 import com.goose.crosstimer.crossroad.dto.CrossroadRangeRequest;
+import com.goose.crosstimer.crossroad.dto.CrossroadRangeResponse;
 import com.goose.crosstimer.crossroad.dto.CrossroadWithSignalResponse;
 import com.goose.crosstimer.crossroad.service.CrossroadService;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +22,7 @@ public class CrossroadController {
     }
 
     @PostMapping
-    public ResponseEntity<List<Crossroad>> getCrossroadInRange(@RequestBody CrossroadRangeRequest request) {
+    public ResponseEntity<List<CrossroadRangeResponse>> getCrossroadInRange(@RequestBody CrossroadRangeRequest request) {
         return ResponseEntity.ok(crossroadService.getCrossroadsInRange(request));
     }
 }
