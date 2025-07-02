@@ -18,6 +18,13 @@ public class CrossroadBatchService {
     private final TDataApiService tDataApiService;
     private final CrossroadJpaRepository crossroadJpaRepository;
 
+    /**
+     * TData 교차로 MAP 정보 API를 호출하여 제공되는 모든 교차로 정보를 MySQL에 저장
+     * <p>
+     * - 페이지 번호(pageNo)를 1부터 순차 증가시키며 API를 호출
+     * - 응답이 비어있으면 반복 종료
+     * - 수집된 DTO를 엔티티로 매핑 후 saveAll로 일괄 저장
+     */
     //    @Scheduled(fixedRate = 3_000_000L)
     public void fetchCrossroadData() {
         log.info("교차로 데이터 추가");

@@ -79,7 +79,6 @@ public class HoltWinters {
     public double[] forecast(int k) {
         int n = data.size();
         double[] result = new double[k];
-        // not enough history -> return zeros or safe default
         if (n < 2) {
             for (int i = 0; i < k; i++) result[i] = data.isEmpty() ? 0 : data.get(data.size() - 1);
             return result;

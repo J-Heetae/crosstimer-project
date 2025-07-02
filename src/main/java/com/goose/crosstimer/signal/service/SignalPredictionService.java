@@ -29,7 +29,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class SignalPredictionService {
     private final CrossroadJpaRepository crossroadRepository;
-    private final SignalLogMongoRepository logRepository;
     private final SignalCycleJpaRepository cycleRepository;
     private final RetryExecutor retryExecutor;
 
@@ -185,6 +184,9 @@ public class SignalPredictionService {
 //        retryExecutor.runWithRetry(logRepo::deleteAll, "SignalLog 삭제");
     }
 
+    /**
+     * 이상치 제거: 중앙값 +-30% 필터링
+     */
     private List<Double> removeOutliers(List<Double> list) {
         if (list.isEmpty()) {
             return Collections.emptyList();
@@ -207,12 +209,18 @@ public class SignalPredictionService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * List<Double>를 배열로 변환
+     */
     private static double[] toArray(List<Double> list) {
         double[] arr = new double[list.size()];
         for (int i = 0; i < list.size(); i++) arr[i] = list.get(i);
         return arr;
     }
 
+    /**
+     * 교차로 ID와 방향으로 키 생성
+     */
     private String buildKey(int itstId, String direction) {
         return itstId + ":" + direction.toUpperCase();
     }

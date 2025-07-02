@@ -27,6 +27,13 @@ public class CrossroadService {
     private final CrossroadJpaRepository crossroadJpaRepository;
     private final SignalCacheService signalCacheService;
 
+    /**
+     * 교차로와 해당 교차로의 SignalCycle 및 최신 SignalCache 정보를 조회
+     *
+     * @param itstId 교차로 ID
+     * @return 교차로 정보 및 신호 주기/캐시 정보
+     * @throws CustomException 교차로 미존재 시 오류 발생
+     */
     public CrossroadWithSignalResponse getCrossroadWithSignalCycles(Integer itstId) {
         Crossroad findCrossroad = crossroadJpaRepository.findCrossroadWithSignalCycles(itstId).orElseThrow(
                 () -> new CustomException(ErrorCode.CROSSROAD_NOT_FOUND)
@@ -58,6 +65,13 @@ public class CrossroadService {
         );
     }
 
+
+    /**
+     * 특정 교차로의 SignalCycle을 SignalCycleResponse로 변환
+     *
+     * @param findCrossroad 교차로
+     * @return SignalCycleResponse 리스트
+     */
     private List<SignalCycleResponse> getSignalCycleResponses(Crossroad findCrossroad) {
         List<SignalCycle> signalCycleList = Optional.ofNullable(findCrossroad.getSignalCycleList())
                 .orElse(List.of());
@@ -74,6 +88,13 @@ public class CrossroadService {
         return signalCycleResponseList;
     }
 
+    /**
+     * 범위 내 위/경도 조건으로 교차로 리스트를 조회
+     *
+     * @param request 범위 정보(SW/NE 좌표)
+     * @return 해당 범위 교차로 DTO 리스트
+     * @throws CustomException 조회 결과가 없으면 오류 발생
+     */
     public List<CrossroadRangeResponse> getCrossroadsInRange(CrossroadRangeRequest request) {
         List<Crossroad> crossroadList = crossroadJpaRepository.findByLatBetweenAndLngBetween(
                 request.swLat(), request.neLat(),
