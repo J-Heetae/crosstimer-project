@@ -1,17 +1,20 @@
 package com.goose.crosstimer.signal.domain;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.redis.core.RedisHash;
 
 import java.time.Instant;
 
-@Data
+@RedisHash(value = "signal", timeToLive = 300)
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class SignalCache {
+    @Id
+    private String id;
     private Instant signalTimestamp;
     private String status;
     private Integer remaining;
