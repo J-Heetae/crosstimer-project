@@ -1,6 +1,5 @@
 package com.goose.crosstimer.signal.service;
 
-import com.goose.crosstimer.api.service.TDataApiService;
 import com.goose.crosstimer.signal.domain.SignalCache;
 import com.goose.crosstimer.signal.domain.SignalCycle;
 import com.goose.crosstimer.signal.domain.SignalLog;
