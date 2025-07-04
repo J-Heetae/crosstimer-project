@@ -47,8 +47,13 @@ public class CrossroadService {
             if (cache == null) {
                 continue;
             }
+
+            String cacheId = cache.getId();
+            String direction = cacheId.split(":")[1];
+
             signalCacheResponseList.add(new SignalCacheResponse(
                     cache.getSignalTimestamp(),
+                    direction,
                     cache.getStatus(),
                     cache.getRemaining(),
                     cache.getPredictedGreenSec(),
