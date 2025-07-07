@@ -88,7 +88,7 @@ public class SignalLogBatchService {
                     logList.add(SignalLog.builder()
                             .itstId(response.itstId())
                             .direction(direction)
-                            .signalTimestamp(Instant.ofEpochMilli(response.trsmUtcTime()))
+                            .signalTimestamp(Instant.ofEpochMilli(response.sentAt()))
                             .loggedAt(Instant.now())
                             .remaining(currDirection.remainingDeciSeconds() / 10)
                             .status(getFixedStatus(currDirection))
@@ -140,14 +140,14 @@ public class SignalLogBatchService {
      */
     private static Map<String, SignalData> getStringSignalDataMap(TDataSignalResponse response) {
         Map<String, SignalData> directionMap = new HashMap<>();
-        directionMap.put("N", new SignalData(response.ntPdsgRmdrCs(), response.ntPdsgStatNm()));
-        directionMap.put("E", new SignalData(response.etPdsgRmdrCs(), response.etPdsgStatNm()));
-        directionMap.put("S", new SignalData(response.stPdsgRmdrCs(), response.stPdsgStatNm()));
-        directionMap.put("W", new SignalData(response.wtPdsgRmdrCs(), response.wtPdsgStatNm()));
-        directionMap.put("NE", new SignalData(response.nePdsgRmdrCs(), response.nePdsgStatNm()));
-        directionMap.put("NW", new SignalData(response.nwPdsgRmdrCs(), response.nwPdsgStatNm()));
-        directionMap.put("SE", new SignalData(response.sePdsgRmdrCs(), response.sePdsgStatNm()));
-        directionMap.put("SW", new SignalData(response.swPdsgRmdrCs(), response.swPdsgStatNm()));
+        directionMap.put("N", new SignalData(response.nSec(), response.nStatus()));
+        directionMap.put("E", new SignalData(response.eSec(), response.eStatus()));
+        directionMap.put("S", new SignalData(response.sSec(), response.sStatus()));
+        directionMap.put("W", new SignalData(response.wSec(), response.wStatus()));
+        directionMap.put("NE", new SignalData(response.neSec(), response.neStatus()));
+        directionMap.put("NW", new SignalData(response.nwSec(), response.nwStatus()));
+        directionMap.put("SE", new SignalData(response.seSec(), response.seStatus()));
+        directionMap.put("SW", new SignalData(response.swSec(), response.swStatus()));
         return directionMap;
     }
 }
