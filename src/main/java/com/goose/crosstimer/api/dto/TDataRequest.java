@@ -7,9 +7,9 @@ public class TDataRequest {
     private final String type = "json";
     private final int pageNo;
     private final int numOfRows;
-    private final Integer itstId;
+    private final Integer crossroadId;
 
-    private TDataRequest(int pageNo, int numOfRows, Integer itstId) {
+    private TDataRequest(int pageNo, int numOfRows, Integer crossroadId) {
         if (pageNo <= 0) {
             throw new IllegalArgumentException("pageNo은 0보다 커야 합니다.");
         }
@@ -20,7 +20,7 @@ public class TDataRequest {
 
         this.pageNo = pageNo;
         this.numOfRows = numOfRows;
-        this.itstId = itstId;
+        this.crossroadId = crossroadId;
     }
 
     public static TDataRequest from() {
@@ -33,7 +33,7 @@ public class TDataRequest {
     }
 
     // 특정 교차로 ID 기반 요청
-    public static TDataRequest fromItstId(Integer itstId) {
-        return new TDataRequest(1, 1, itstId);
+    public static TDataRequest fromCrossroadId(Integer crossroadId) {
+        return new TDataRequest(1, 1, crossroadId);
     }
 }

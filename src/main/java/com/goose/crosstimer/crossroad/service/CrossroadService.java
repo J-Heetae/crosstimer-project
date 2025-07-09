@@ -1,96 +1,89 @@
 package com.goose.crosstimer.crossroad.service;
 
+import com.goose.crosstimer.api.dto.TDataSignalResponse;
+import com.goose.crosstimer.api.service.TDataApiService;
 import com.goose.crosstimer.common.exception.CustomException;
 import com.goose.crosstimer.common.exception.ErrorCode;
 import com.goose.crosstimer.crossroad.domain.Crossroad;
 import com.goose.crosstimer.crossroad.dto.CrossroadRangeRequest;
 import com.goose.crosstimer.crossroad.dto.CrossroadRangeResponse;
+import com.goose.crosstimer.signal.domain.SignalCache;
 import com.goose.crosstimer.crossroad.dto.CrossroadWithSignalResponse;
 import com.goose.crosstimer.crossroad.repository.CrossroadJpaRepository;
-import com.goose.crosstimer.signal.domain.SignalCache;
-import com.goose.crosstimer.signal.domain.SignalCycle;
+import com.goose.crosstimer.signal.domain.SignalInfo;
 import com.goose.crosstimer.signal.dto.SignalCacheResponse;
-import com.goose.crosstimer.signal.dto.SignalCycleResponse;
-import com.goose.crosstimer.signal.service.SignalCacheService;
+import com.goose.crosstimer.signal.mapper.SignalCacheMapper;
+import com.goose.crosstimer.signal.repository.SignalCacheRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class CrossroadService {
     private final CrossroadJpaRepository crossroadJpaRepository;
-    private final SignalCacheService signalCacheService;
+    private final SignalCacheRepository signalCacheRepository;
+    private final TDataApiService tDataApiService;
+    private final SignalCacheMapper signalCacheMapper;
 
-    /**
-     * 교차로와 해당 교차로의 SignalCycle 및 최신 SignalCache 정보를 조회
-     *
-     * @param itstId 교차로 ID
-     * @return 교차로 정보 및 신호 주기/캐시 정보
-     * @throws CustomException 교차로 미존재 시 오류 발생
-     */
-    public CrossroadWithSignalResponse getCrossroadWithSignalCycles(Integer itstId) {
-        Crossroad findCrossroad = crossroadJpaRepository.findCrossroadWithSignalCycles(itstId).orElseThrow(
-                () -> new CustomException(ErrorCode.CROSSROAD_NOT_FOUND)
-        );
+    public CrossroadWithSignalResponse getCrossroadWithSignals(Integer crossroadId) {
+        log.debug("getCrossroadWithSignals 호출: crossroadId={}", crossroadId);
+        Crossroad findCrossroad = crossroadJpaRepository.findById(crossroadId)
+                .orElseThrow(() -> new CustomException(ErrorCode.CROSSROAD_NOT_FOUND));
+        log.debug("찾은 교차로: id={}, name={}", findCrossroad.getCrossroadId(), findCrossroad.getName());
 
-        List<SignalCycleResponse> signalCycleResponseList = getSignalCycleResponses(findCrossroad);
+        SignalCache findCache = signalCacheRepository.findById(findCrossroad.getCrossroadId())
+                .orElseGet(() -> fetchAndCacheSignal(crossroadId)); //캐시된 신호 데이터가 없는 경우
+        log.debug("사용할 SignalCache: crossroadId={}, sendAt={}, cachedAt={}",
+                findCache.getCrossroadId(), findCache.getSendAt(), findCache.getCachedAt());
 
-        List<SignalCacheResponse> signalCacheResponseList = new ArrayList<>();
-        for (SignalCycleResponse signalCycleResponse : signalCycleResponseList) {
-            SignalCache cache = signalCacheService.findCache(itstId, signalCycleResponse.direction());
-            if (cache == null) {
-                continue;
-            }
 
-            String cacheId = cache.getId();
-            String direction = cacheId.split(":")[1];
-
-            signalCacheResponseList.add(new SignalCacheResponse(
-                    cache.getSignalTimestamp(),
-                    direction,
-                    cache.getStatus(),
-                    cache.getRemaining(),
-                    cache.getPredictedGreenSec(),
-                    cache.getPredictedRedSec()
-            ));
-        }
+        List<SignalCacheResponse> signalCacheResponses = findCache.getSignals().stream()
+                .map(this::toSignalCacheResponse)
+                .toList();
+        log.debug("매핑된 SignalCacheResponse 개수={}", signalCacheResponses.size());
 
         return new CrossroadWithSignalResponse(
-                findCrossroad.getItstId(),
+                findCrossroad.getCrossroadId(),
                 findCrossroad.getName(),
                 findCrossroad.getLat(),
                 findCrossroad.getLng(),
-                signalCacheResponseList
+                findCache.getSendAt(),
+                findCache.getCachedAt(),
+                signalCacheResponses
         );
     }
 
+    private SignalCache fetchAndCacheSignal(Integer crossroadId) {
+        //외부 API 호출
+        log.debug("fetchAndCacheSignal 호출: crossroadId={}", crossroadId);
+        List<TDataSignalResponse> responses = tDataApiService.getSignalsByCrossroadId(crossroadId);
 
-    /**
-     * 특정 교차로의 SignalCycle을 SignalCycleResponse로 변환
-     *
-     * @param findCrossroad 교차로
-     * @return SignalCycleResponse 리스트
-     */
-    private List<SignalCycleResponse> getSignalCycleResponses(Crossroad findCrossroad) {
-        List<SignalCycle> signalCycleList = Optional.ofNullable(findCrossroad.getSignalCycleList())
-                .orElse(List.of());
-
-        List<SignalCycleResponse> signalCycleResponseList = new ArrayList<>();
-        for (SignalCycle signalCycle : signalCycleList) {
-            signalCycleResponseList.add(new SignalCycleResponse(
-                    signalCycle.getDirection(),
-                    signalCycle.getGreenSec(),
-                    signalCycle.getRedSec(),
-                    signalCycle.getUpdatedAt().toEpochMilli()
-            ));
+        //가장 최신 데이터만 사용
+        if (responses.isEmpty()) {
+            log.warn("TData API 응답 없음 or 빈 리스트: crossroadId={}", crossroadId);
+            throw new CustomException(ErrorCode.EXTERNAL_SIGNAL_API_ERROR);
         }
-        return signalCycleResponseList;
+        TDataSignalResponse latest = responses.get(0);
+
+        //API 응답을 Redis 캐시
+        SignalCache cache = signalCacheMapper.fromTDataResponse(latest);
+        signalCacheRepository.save(cache);
+        log.debug("SignalCache 저장 완료: crossroadId={}", cache.getCrossroadId());
+
+        return cache;
+    }
+
+    private SignalCacheResponse toSignalCacheResponse(SignalInfo info) {
+        return new SignalCacheResponse(
+                info.getDirection(),
+                info.getStatus(),
+                info.getRemainingSec()
+        );
     }
 
     /**
@@ -113,7 +106,7 @@ public class CrossroadService {
         List<CrossroadRangeResponse> result = new ArrayList<>();
         for (Crossroad crossroad : crossroadList) {
             result.add(new CrossroadRangeResponse(
-                    crossroad.getItstId(),
+                    crossroad.getCrossroadId(),
                     crossroad.getName(),
                     crossroad.getLat(),
                     crossroad.getLng()

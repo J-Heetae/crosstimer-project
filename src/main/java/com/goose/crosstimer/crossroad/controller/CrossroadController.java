@@ -18,12 +18,12 @@ public class CrossroadController {
 
     /**
      * 캐시된 각 방향의 신호 정보를 포함한 교차로 검색
-     * @param itstId 교차로 ID
+     * @param crossroadId 교차로 ID
      * @return 캐시된 각 방향의 신호 정보를 포함한 교차로 정보
      */
-    @GetMapping("/{itstId}/signal-cache")
-    public ResponseEntity<CrossroadWithSignalResponse> getCrossroadWithSignalCache(@PathVariable(name = "itstId") Integer itstId) {
-        return ResponseEntity.ok(crossroadService.getCrossroadWithSignalCycles(itstId));
+    @GetMapping("/{crossroadId}/signals")
+    public ResponseEntity<CrossroadWithSignalResponse> getCrossroadWithSignals(@PathVariable(name = "crossroadId") Integer crossroadId) {
+        return ResponseEntity.ok(crossroadService.getCrossroadWithSignals(crossroadId));
     }
 
     /**
@@ -32,7 +32,7 @@ public class CrossroadController {
      * @return 범위 내의 교차로 리스트
      */
     @PostMapping
-    public ResponseEntity<List<CrossroadRangeResponse>> getCrossroadInRange(@RequestBody CrossroadRangeRequest request) {
+    public ResponseEntity<List<CrossroadRangeResponse>> getCrossroadsInRange(@RequestBody CrossroadRangeRequest request) {
         return ResponseEntity.ok(crossroadService.getCrossroadsInRange(request));
     }
 }

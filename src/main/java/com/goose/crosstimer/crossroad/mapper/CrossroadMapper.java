@@ -6,7 +6,7 @@ import com.goose.crosstimer.crossroad.domain.Crossroad;
 public class CrossroadMapper {
     public static Crossroad fromDto(TDataCrossroadResponse dto) {
         return Crossroad.builder()
-                .itstId(dto.itstId())
+                .crossroadId(dto.crossroadId())
                 .name(dto.name())
                 .lat(dto.lat())
                 .lng(dto.lng())
