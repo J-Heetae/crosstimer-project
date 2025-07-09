@@ -9,7 +9,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriBuilder;
-import reactor.util.retry.Retry;
 
 import java.net.URI;
 import java.time.Duration;
@@ -21,10 +20,7 @@ import java.util.List;
 public class TDataApiClient {
     private final WebClient webClient;
 
-    private static final int MAX_RETRY = 2;
-    private static final int DEFAULT_TIMEOUT_SECONDS = 10;
-    private static final Duration BACKOFF = Duration.ofSeconds(10L);
-    private static final Duration TIMEOUT = Duration.ofSeconds(DEFAULT_TIMEOUT_SECONDS + (10 + 20));
+    private static final Duration DEFAULT_TIMEOUT_SECONDS = Duration.ofSeconds(1L);
     private static final String BASE_URL = "https://t-data.seoul.go.kr";
 
     @Value("${tdata.api-key}")
@@ -62,19 +58,12 @@ public class TDataApiClient {
                     .retrieve()
                     .bodyToFlux(responseType)
                     .doOnSubscribe(sub -> log.info("{}", logMessage))
-                    .retryWhen(Retry.backoff(MAX_RETRY, BACKOFF)
-                            .doBeforeRetry(this::logRetry))
                     .collectList()
-                    .block(TIMEOUT);
+                    .block(DEFAULT_TIMEOUT_SECONDS);
         } catch (Exception e) {
-            log.warn("{} 최종 실패, 빈 리스트 반환", logMessage, e);
+            log.warn("{} 실패, 빈 리스트 반환", logMessage, e);
             return List.of();
         }
-    }
-
-    private void logRetry(Retry.RetrySignal signal) {
-        long attempt = signal.totalRetriesInARow() + 1;
-        log.warn("API 호출 재시도 {}회차 (에러: {})", attempt, signal.failure().getMessage());
     }
 
     private URI applyCommonParams(UriBuilder builder, TDataRequest dto) {
@@ -83,8 +72,8 @@ public class TDataApiClient {
                 .queryParam("pageNo", dto.getPageNo())
                 .queryParam("numOfRows", dto.getNumOfRows());
 
-        if (dto.getItstId() != null) {
-            builder.queryParam("itstId", dto.getItstId());
+        if (dto.getCrossroadId() != null) {
+            builder.queryParam("itstId", dto.getCrossroadId());
         }
 
         return builder.build();
