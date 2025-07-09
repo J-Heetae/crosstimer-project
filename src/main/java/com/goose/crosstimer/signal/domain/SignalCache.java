@@ -3,10 +3,12 @@ package com.goose.crosstimer.signal.domain;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.redis.core.RedisHash;
+import org.springframework.data.redis.core.TimeToLive;
 
 import java.time.Instant;
+import java.util.List;
 
-@RedisHash(value = "signal")
+@RedisHash("signal")
 @Getter
 @Setter
 @Builder
@@ -14,11 +16,10 @@ import java.time.Instant;
 @AllArgsConstructor
 public class SignalCache {
     @Id
-    private String id;
-    private Instant signalTimestamp;
-    private String status;
-    private Integer remaining;
-    private Integer predictedGreenSec;
-    private Integer predictedRedSec;
-    private Instant updatedAt;
+    private Integer crossroadId;
+    private List<SignalInfo> signals;
+    private Instant sendAt;
+    private Instant cachedAt;
+    @TimeToLive
+    private long ttlSeconds;
 }

@@ -40,6 +40,8 @@ dependencies {
 
     //Redis
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
+    //Redisson
     implementation 'org.redisson:redisson-spring-boot-starter:3.24.0' //분산 락
 
     // JUnit5 + Testcontainers 지원
