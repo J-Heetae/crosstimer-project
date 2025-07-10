@@ -21,7 +21,9 @@ public class TDataApiClient {
     private final WebClient webClient;
 
     private static final Duration DEFAULT_TIMEOUT_SECONDS = Duration.ofSeconds(1L);
-    private static final String BASE_URL = "https://t-data.seoul.go.kr";
+
+    @Value("${tdata.base-url}")
+    private String BASE_URL;
 
     @Value("${tdata.api-key}")
     private String apiKey;
@@ -48,11 +50,13 @@ public class TDataApiClient {
 
     private <T> List<T> fetch(String path, TDataRequest requestDto, Class<T> responseType, String logMessage) {
         try {
+            URI base = URI.create(BASE_URL);
             return webClient.get()
                     .uri(uriBuilder -> applyCommonParams(
                             uriBuilder
                                     .scheme(URI.create(BASE_URL).getScheme())
-                                    .host(URI.create(BASE_URL).getHost())
+                                    .host(base.getHost())
+                                    .port(base.getPort())
                                     .path(path),
                             requestDto))
                     .retrieve()

@@ -1,0 +1,27 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/apig/apiman-gateway/tapi/v2xSignalPhaseTimingFusionInformation/1.0",
+    "queryParameters": {
+      "itstId": {
+        "equalTo": "123"
+      },
+      "pageNo": {
+        "equalTo": "1"
+      },
+      "numOfRows": {
+        "equalTo": "1"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "fixedDelayMilliseconds": 100,
+    "headers": {
+      "Content-Type": "application/json; charset=UTF-8"
+    },
+    "jsonBody": {
+      "data": ""
+    }
+  }
+}

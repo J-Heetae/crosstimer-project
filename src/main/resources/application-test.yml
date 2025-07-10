@@ -1,0 +1,7 @@
+spring:
+  config:
+    activate:
+      on-profile: test
+
+tdata:
+  base-url: "http://localhost:${wiremock.server.port}"
