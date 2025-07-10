@@ -11,7 +11,7 @@ import static lombok.AccessLevel.PROTECTED;
 
 @Getter
 @Entity
-@Table(name = "crossroad")
+@Table(name = "crossroads")
 @ToString
 @NoArgsConstructor(access = PROTECTED)
 public class Crossroad {
