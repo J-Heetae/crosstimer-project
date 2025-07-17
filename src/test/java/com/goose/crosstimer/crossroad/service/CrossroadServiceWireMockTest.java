@@ -38,37 +38,49 @@ class CrossroadServiceWireMockTest {
     }
 
     @Test
-    @DisplayName("동시 호출 시 외부 API 호출 중복 발생")
-    void concurrent_shouldCallApiForEachThread() throws InterruptedException {
+    @DisplayName("redisson 활용한 동시성 제어")
+    void concurrent_Redisson() throws InterruptedException {
         final int threadCount = 50; //쓰레드 수
-        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
-        CountDownLatch latch = new CountDownLatch(threadCount);
+        final int count = 10;
+        long totalMs = 0L;
 
-        long startNanos = System.nanoTime();
-        for (int i = 0; i < threadCount; i++) {
-            executor.submit(() -> {
-                try {
-                    CrossroadWithSignalResponse response = crossroadService.getCrossroadWithSignals(123);
-                    assertThat(response.crossroadId()).isEqualTo(123);
-                } finally {
-                    latch.countDown();
-                }
-            });
+        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+        for (int i = 0; i < count; i++) {
+            System.out.println((i + 1) + "번째 테스트 시작 =================================");
+            CountDownLatch latch = new CountDownLatch(threadCount);
+            long startNanos = System.nanoTime();
+            for (int j = 0; j < threadCount; j++) {
+                executor.submit(() -> {
+                    try {
+                        CrossroadWithSignalResponse response = crossroadService.getCrossroadWithSignals(123);
+                        assertThat(response.crossroadId()).isEqualTo(123);
+                    } finally {
+                        latch.countDown();
+                    }
+                });
+            }
+
+            // 모든 스레드 완료 대기
+            boolean finished = latch.await(100, TimeUnit.SECONDS);
+            assertThat(finished).isTrue();
+
+            long elapsedMs = (System.nanoTime() - startNanos) / 1_000_000;
+            if (i != 0) {
+                System.out.println((i + 1) + "번째 실행 시간: " + elapsedMs + "ms");
+                totalMs += elapsedMs;
+            }
+            int actualApiCalls = wireMockServer.getAllServeEvents().size();
+            System.out.println((i + 1) + "번째 API 호출 횟수: " + actualApiCalls);
+            assertThat(actualApiCalls)
+                    .as("각 시도당 1번만 API를 호출 한다.")
+                    .isEqualTo(1);
+            //Redis 캐시 클리어
+            signalCacheRepository.deleteAll();
+            //WireMockServer 기록 초기화
+            wireMockServer.resetRequests();
         }
 
-        // 모든 스레드 완료 대기
-        boolean finished = latch.await(100, TimeUnit.SECONDS);
-        assertThat(finished).isTrue();
-
-        long elapsedMs = (System.nanoTime() - startNanos) / 1_000_000;
-        System.out.println("총 소요시간: " + elapsedMs + "ms");
-
-        //WireMock이 기록한 ServeEvent 개수로 외부 API 호출 횟수 검증
-        int actualApiCalls = wireMockServer.getAllServeEvents().size();
-        System.out.println("API 호출 횟수: " + actualApiCalls);
-        assertThat(actualApiCalls)
-                .as("스레드 수만큼 API가 호출되어야 한다.")
-                .isEqualTo(threadCount);
+        System.out.println("평균 실행 시간: " + (totalMs / count - 1) + "ms");
 
         executor.shutdownNow();
     }
