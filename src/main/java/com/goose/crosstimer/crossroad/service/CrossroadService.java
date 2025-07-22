@@ -18,6 +18,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -213,31 +217,47 @@ public class CrossroadService {
     }
 
     /**
-     * 범위 내 위/경도 조건으로 교차로 리스트를 조회
+     * 주어진 남서쪽(SW) 및 북동쪽(NE) 좌표 범위 내 교차로 목록을 슬라이스(Slice) 방식으로 페이징 조회합니다.
      *
      * @param request 범위 정보(SW/NE 좌표)
-     * @return 해당 범위 교차로 DTO 리스트
-     * @throws CustomException 조회 결과가 없으면 오류 발생
+     * @param page    조회할 페이지 번호 (1~45, 기본값: 1)
+     * @param size    페이지당 결과 개수 (1~15, 기본값: 15)
+     * @return 슬라이스 형식의 교차로 DTO 목록 및 다음 페이지 존재 여부
+     * @throws CustomException 조회 결과가 없으면 {@code CROSSROAD_RANGE_EMPTY} 예외 발생
      */
-    public List<CrossroadRangeResponse> getCrossroadsInRange(CrossroadRangeRequest request) {
-        List<Crossroad> crossroadList = crossroadJpaRepository.findByLatBetweenAndLngBetween(
+    public Slice<CrossroadRangeResponse> getCrossroadsInRangeWithPaging(CrossroadRangeRequest request,
+                                                                        int page, int size) {
+        Slice<Crossroad> crossroadSlice = crossroadJpaRepository.findByLatBetweenAndLngBetween(
                 request.swLat(), request.neLat(),
-                request.swLng(), request.neLng()
+                request.swLng(), request.neLng(),
+                createPageable(page, size)
         );
 
-        if (crossroadList.isEmpty()) { //교차로가 존재하지 않을 경우
+        if (crossroadSlice.isEmpty()) { //교차로가 존재하지 않을 경우
             throw new CustomException(ErrorCode.CROSSROAD_RANGE_EMPTY);
         }
 
-        List<CrossroadRangeResponse> result = new ArrayList<>();
-        for (Crossroad crossroad : crossroadList) {
-            result.add(new CrossroadRangeResponse(
-                    crossroad.getCrossroadId(),
-                    crossroad.getName(),
-                    crossroad.getLat(),
-                    crossroad.getLng()
-            ));
-        }
-        return result;
+        return crossroadSlice.map(this::toResponse);
+    }
+
+    /**
+     * 페이지 번호와 크기를 검증하고 Pageable 객체를 생성합니다.
+     */
+    private Pageable createPageable(int page, int size) {
+        int validatedPage = Math.min(Math.max(page, 1), 45) - 1;
+        int validatedSize = Math.min(Math.max(size, 1), 15);
+        return PageRequest.of(validatedPage, validatedSize);
+    }
+
+    /**
+     * Crossroad 엔티티를 응답 DTO로 변환합니다.
+     */
+    private CrossroadRangeResponse toResponse(Crossroad crossroad) {
+        return new CrossroadRangeResponse(
+                crossroad.getCrossroadId(),
+                crossroad.getName(),
+                crossroad.getLat(),
+                crossroad.getLng()
+        );
     }
 }
