@@ -39,8 +39,6 @@ public class CrossroadService {
     private final SignalCacheMapper signalCacheMapper;
     private final RedissonClient redissonClient;
 
-    private final ConcurrentHashMap<Integer, ReentrantLock> lockMap = new ConcurrentHashMap<>();
-
     private static final long LOCK_WAIT_TIME_MS = 10; //Lock 대기 시작
     private static final long LOCK_LEASE_TIME_MS = 2_000; //Lock 최대 점유 시간
     private static final long MAX_CACHE_WAIT_MS = 150; //Cache polling 최대 주기
