@@ -1,0 +1,41 @@
+spring:
+  application:
+    name: crosstimer
+
+  devtools:
+    restart:
+      enabled: false
+
+  datasource:
+    url: ${MYSQL_URL}
+    username: ${MYSQL_USERNAME}
+    password: ${MYSQL_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO:none}
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: ${SHOW_SQL:false}
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+
+server:
+  port: ${SERVER_PORT:8080}
+
+logging:
+  level:
+    root: ${LOG_LEVEL:INFO}
+    com.goose.crosstimer: DEBUG
+
+tdata:
+  api-key: ${TDATA_API_KEY}
+  base-url: https://t-data.seoul.go.kr
