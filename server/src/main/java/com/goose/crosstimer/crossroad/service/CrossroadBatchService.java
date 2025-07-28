@@ -5,6 +5,7 @@ import com.goose.crosstimer.api.service.TDataApiService;
 import com.goose.crosstimer.crossroad.domain.Crossroad;
 import com.goose.crosstimer.crossroad.mapper.CrossroadMapper;
 import com.goose.crosstimer.crossroad.repository.CrossroadJpaRepository;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -22,10 +23,16 @@ public class CrossroadBatchService {
     private final TDataApiService tDataApiService;
     private final CrossroadJpaRepository crossroadJpaRepository;
 
+    @PostConstruct
+    public void initUpsertOnStartup() {
+        log.info("애플리케이션 시작 시 교차로 데이터 Upsert 실행");
+        upsertCrossroads();
+    }
+
     /**
      * TData 교차로 MAP 정보 API를 호출하여 제공된 모든 교차로 정보를 MySQL에 Upsert 처리
      */
-//    @Scheduled(fixedRate = 999_999_999L)
+    @Scheduled(cron = "0 0 4 1 * ?", zone = "Asia/Seoul")
     @Transactional
     public void upsertCrossroads() {
         log.info("교차로 데이터 Upsert");
