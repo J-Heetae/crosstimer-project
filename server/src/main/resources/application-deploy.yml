@@ -2,6 +2,9 @@ spring:
   application:
     name: crosstimer
 
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+
   devtools:
     restart:
       enabled: false
@@ -29,6 +32,7 @@ spring:
       port: ${REDIS_PORT}
 
 server:
+  shutdown: graceful
   port: ${SERVER_PORT:8080}
 
 logging:
