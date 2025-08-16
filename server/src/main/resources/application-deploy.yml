@@ -21,6 +21,10 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        jdbc:
+          batch_size: 500
+        order_updates: true
+        order_inserts: true
     show-sql: ${SHOW_SQL:false}
     database-platform: org.hibernate.dialect.MySQL8Dialect
 

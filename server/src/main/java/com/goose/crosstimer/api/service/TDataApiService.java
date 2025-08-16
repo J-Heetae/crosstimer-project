@@ -24,9 +24,4 @@ public class TDataApiService {
     public List<TDataSignalResponse> getSignalsByCrossroadId(int crossroadId) {
         return apiClient.getSignalInfo(TDataRequest.fromCrossroadId(crossroadId));
     }
-
-    public List<TDataSignalResponse> getSignalsMaxRow(int pageNo) {
-        final int numOfRows = 1000;
-        return apiClient.getSignalInfo(TDataRequest.fromPagination(pageNo, numOfRows));
-    }
 }
