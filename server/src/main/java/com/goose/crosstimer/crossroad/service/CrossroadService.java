@@ -8,7 +8,6 @@ import com.goose.crosstimer.common.exception.ErrorCode;
 import com.goose.crosstimer.crossroad.domain.Crossroad;
 import com.goose.crosstimer.crossroad.dto.CrossroadRangeRequest;
 import com.goose.crosstimer.crossroad.dto.CrossroadRangeResponse;
-import com.goose.crosstimer.crossroad.mapper.CrossroadMapper;
 import com.goose.crosstimer.signal.domain.SignalCache;
 import com.goose.crosstimer.crossroad.dto.CrossroadWithSignalResponse;
 import com.goose.crosstimer.crossroad.repository.CrossroadJpaRepository;
@@ -24,9 +23,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -40,6 +37,7 @@ public class CrossroadService {
     private final TDataApiService tDataApiService;
     private final SignalCacheMapper signalCacheMapper;
     private final RedissonClient redissonClient;
+    private final CrossroadUpsertWriterJPA crossroadUpsertWriterJPA;
 
     private static final long LOCK_WAIT_MS = 10; //Lock 대기 시작
     private static final long LOCK_LEASE_MS = 2_000; //Lock 최대 점유 시간
@@ -189,7 +187,6 @@ public class CrossroadService {
     /**
      * TData 교차로 MAP 정보 API를 호출하여 제공된 모든 교차로 정보를 MySQL에 Upsert 처리
      */
-    @Transactional
     public void upsertCrossroads() {
         RLock lock = redissonClient.getLock(UPSERT_LOCK_KEY);
         boolean lockAcquired = false;
@@ -198,37 +195,24 @@ public class CrossroadService {
             if (lockAcquired) {
                 log.info("교차로 데이터 Upsert");
 
-                List<TDataCrossroadResponse> fetched = new ArrayList<>();
                 int pageNo = 1;
+                int insertCount = 0;
+                int updateCount = 0;
                 while (true) {
                     List<TDataCrossroadResponse> responses = tDataApiService.getCrossroadsMaxRow(pageNo++);
+
+                    var write = crossroadUpsertWriterJPA.write(responses);
+                    insertCount += write.inserted();
+                    updateCount += write.updated();
+
                     if (responses.isEmpty()) { //더 이상 조회 안될때까지 반복
                         break;
                     }
-                    fetched.addAll(responses);
                 }
-
-                int saveCount = 0;
-                int updateCount = 0;
-                for (TDataCrossroadResponse response : fetched) {
-                    Optional<Crossroad> findCrossroad = crossroadJpaRepository.findById(response.crossroadId());
-
-                    if (findCrossroad.isEmpty()) { //신규 교차로인 경우 insert
-                        crossroadJpaRepository.save(CrossroadMapper.fromDto(response));
-                        saveCount++;
-                    } else { // 기존 교차로인 경우 update
-                        findCrossroad.get().update(
-                                response.name(),
-                                response.lat(),
-                                response.lng()
-                        );
-                        updateCount++;
-                    }
-                }
-                log.info("교차로 데이터 Upsert 완료 : save {}, update {}", saveCount, updateCount);
+                log.info("교차로 데이터 Upsert 완료 : save {}, update {}", insertCount, updateCount);
             }
         } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException();
         } finally {
             if (lockAcquired) {
                 lock.unlock();
